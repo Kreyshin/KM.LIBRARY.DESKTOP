@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lastLoginAt  DateTime?
+  profiles     Profile[]
+  sessions     AuthSession[]
+
+  @@map("account")
+}
+
+model Profile {
+  id                 String           @id @default(uuid())
+  displayName        String
+  bio                String?
+  location           String?
+  favoriteGenresJson String           @default("[]")
+  avatarUrl          String?
+  color              String           @default("#9F6BFF")
+  readingGoal        Int              @default(12)
+  isKids             Boolean          @default(false)
+  position           Int              @default(0)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  accountId          String
+  account            Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  sessions           AuthSession[]
+  readingSessions    ReadingSession[]
+  shelves            Shelf[]
+
+  @@index([accountId, position])
+  @@map("profile")
+}
+
+model AuthSession {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  accountId String
+  profileId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([profileId])
+  @@map("auth_session")
+}
+
+model Obra {
+  id              String           @id @default(uuid())
+  titulo          String
+  originalTitle   String?
+  autor           String?
+  illustrator     String?
+  publisher       String?
+  releaseYear     Int?
+  tipo            String           @default("MANGA")
+  demographic     String?
+  language        String?
+  status          String           @default("NOT_STARTED")
+  currentVolume   Int?
+  currentChapter  Int?
+  totalChapters   Int?
+  tagsJson        String           @default("[]")
+  rating          Float?
+  description     String?
+  personalReview  String?
+  notes           String?
+  favorite        Boolean          @default(false)
+  coverPath       String?
+  thumbnailPath   String?
+  createdAt       DateTime         @default(now())
+  genreLinks      ObraGenre[]
+  volumes         Volume[]
+  readingSessions ReadingSession[]
+  shelfItems      ShelfItem[]
+
+  @@map("obra")
+}
+
+model Genre {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  slug       String      @unique
+  isStandard Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  obras      ObraGenre[]
+
+  @@map("genre")
+}
+
+model ObraGenre {
+  obraId    String
+  genreId   String
+  createdAt DateTime @default(now())
+  obra      Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  genre     Genre    @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([obraId, genreId])
+  @@index([genreId])
+  @@map("obra_genre")
+}
+
+model Volume {
+  id              String               @id @default(uuid())
+  number          Int
+  status          String               @default("NOT_READ")
+  read            Boolean              @default(false)
+  chapters        String?
+  startDate       DateTime?
+  finishDate      DateTime?
+  notes           String?
+  coverPath       String?
+  thumbnailPath   String?
+  spinePath       String?
+  title           String?
+  isbn            String?
+  publisher       String?
+  publishDate     DateTime?
+  ownership       String               @default("NOT_OWNED")
+  obraId          String
+  obra            Obra                 @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  alternateCovers VolumeCoverVariant[]
+  readingSessions ReadingSession[]
+
+  @@unique([obraId, number])
+  @@map("volume")
+}
+
+model VolumeCoverVariant {
+  id            String    @id @default(uuid())
+  path          String
+  language      String?
+  publisher     String?
+  edition       String?
+  country       String?
+  isbn          String?
+  publishDate   DateTime?
+  spinePath     String?
+  thumbnailPath String?
+  editionType   String    @default("STANDARD")
+  label         String?
+  isPrimary     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  volumeId      String
+  volume        Volume    @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+
+  @@index([volumeId])
+  @@map("volume_cover_variant")
+}
+
+model ReadingSession {
+  id            String   @id @default(uuid())
+  occurredAt    DateTime @default(now())
+  minutes       Int      @default(0)
+  startProgress Int?
+  endProgress   Int?
+  unit          String   @default("CHAPTER")
+  rereadNumber  Int      @default(1)
+  completed     Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+  readerId      String
+  obraId        String
+  volumeId      String?
+  reader        Profile  @relation(fields: [readerId], references: [id], onDelete: Cascade)
+  obra          Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  volume        Volume?  @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+
+  @@index([readerId, occurredAt])
+  @@index([obraId])
+  @@index([volumeId])
+  @@map("reading_session")
+}
+
+model Shelf {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  color       String      @default("#9F6BFF")
+  smartType   String?
+  position    Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  readerId    String
+  reader      Profile     @relation(fields: [readerId], references: [id], onDelete: Cascade)
+  items       ShelfItem[]
+
+  @@unique([readerId, name])
+  @@index([readerId, position])
+  @@map("shelf")
+}
+
+model ShelfItem {
+  id        String   @id @default(uuid())
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  shelfId   String
+  obraId    String
+  shelf     Shelf    @relation(fields: [shelfId], references: [id], onDelete: Cascade)
+  obra      Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+
+  @@unique([shelfId, obraId])
+  @@index([shelfId, position])
+  @@map("shelf_item")
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+uploads/
+.env
+*.log
+.env.*
+!.env.example
+data/
+release/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.dump
+backups/

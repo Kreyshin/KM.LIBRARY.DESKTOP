@@ -1,0 +1,2 @@
+ALTER TABLE "volume"
+ALTER COLUMN "ownership" SET DEFAULT 'NOT_OWNED';

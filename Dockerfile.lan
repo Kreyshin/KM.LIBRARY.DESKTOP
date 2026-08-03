@@ -1,0 +1,25 @@
+FROM node:20-alpine AS web-build
+WORKDIR /web
+COPY karma-front-library/package*.json ./
+RUN npm ci
+COPY karma-front-library/ ./
+RUN npm run build
+
+FROM node:20-alpine AS api-build
+WORKDIR /api
+COPY karma-api-library/package*.json ./
+RUN npm ci
+COPY karma-api-library/ ./
+RUN npx prisma generate && npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=api-build /api/dist ./dist
+COPY --from=api-build /api/prisma ./prisma
+COPY --from=api-build /api/node_modules ./node_modules
+COPY --from=web-build /web/dist ./web
+COPY lan-entrypoint.sh ./lan-entrypoint.sh
+RUN chmod +x ./lan-entrypoint.sh
+EXPOSE 3344
+ENTRYPOINT ["./lan-entrypoint.sh"]
