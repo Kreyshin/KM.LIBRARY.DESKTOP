@@ -30,16 +30,27 @@ Function KarmaNormalizePath
   Exch $0
 FunctionEnd
 
-!macro customInit
+Function KarmaLoadCurrentDataDirectory
   StrCpy $KarmaCurrentDataDirectory "$APPDATA\karma-library-desktop\data"
-  IfFileExists "$APPDATA\karma-library-desktop\data-location.txt" 0 done_reading_location
+  IfFileExists "$APPDATA\karma-library-desktop\data-location.txt" 0 normalize_current_location
+  ClearErrors
   FileOpen $0 "$APPDATA\karma-library-desktop\data-location.txt" r
+  ${If} ${Errors}
+    Goto normalize_current_location
+  ${EndIf}
   FileRead $0 $KarmaCurrentDataDirectory
   FileClose $0
-  done_reading_location:
+  normalize_current_location:
   Push $KarmaCurrentDataDirectory
   Call KarmaNormalizePath
   Pop $KarmaCurrentDataDirectory
+  ${If} $KarmaCurrentDataDirectory == ""
+    StrCpy $KarmaCurrentDataDirectory "$APPDATA\karma-library-desktop\data"
+  ${EndIf}
+FunctionEnd
+
+!macro customInit
+  Call KarmaLoadCurrentDataDirectory
   StrCpy $KarmaDataDirectory $KarmaCurrentDataDirectory
 !macroend
 
@@ -48,6 +59,8 @@ FunctionEnd
 !macroend
 
 Function KarmaDataPageCreate
+  Call KarmaLoadCurrentDataDirectory
+  StrCpy $KarmaDataDirectory $KarmaCurrentDataDirectory
   !insertmacro MUI_HEADER_TEXT "Ubicación de la biblioteca" "Elige dónde se guardarán la base de datos y todas las imágenes."
   nsDialogs::Create 1018
   Pop $0
@@ -92,6 +105,7 @@ Function KarmaDataBrowse
 FunctionEnd
 
 Function KarmaDataPageLeave
+  Call KarmaLoadCurrentDataDirectory
   ${NSD_GetText} $KarmaDataDirectoryInput $KarmaDataDirectory
   ${If} $KarmaDataDirectory == ""
     MessageBox MB_ICONEXCLAMATION|MB_OK "Selecciona una carpeta para guardar la biblioteca."
