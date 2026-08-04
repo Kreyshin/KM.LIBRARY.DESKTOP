@@ -5,6 +5,7 @@ import {
   BarChart3, Users, Settings, UserRound,
 } from 'lucide-vue-next';
 import logoMark from '../assets/brand/logo-mark.png';
+import ReadingTimer from './ReadingTimer.vue';
 
 const route = useRoute();
 
@@ -43,10 +44,7 @@ const items = [
     </nav>
 
     <div class="sidebar-footer">
-      <div class="placeholder-card">
-        Niveles, logros y rachas de lectura — próximamente en Karma Library.
-      </div>
-      <div class="sidebar-art"><img  alt="" /></div>
+      <ReadingTimer />
     </div>
   </aside>
 </template>

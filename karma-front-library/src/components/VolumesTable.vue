@@ -22,6 +22,7 @@ import {
   type VolumeStatus,
 } from '../api/client';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
+import DatePicker from './DatePicker.vue';
 
 const props = defineProps<{ obraId: string; obra: Obra; volumes: Volume[] }>();
 const emit = defineEmits<{ (e: 'changed'): void }>();
@@ -260,11 +261,11 @@ function displayCover(volume: Volume) {
         <div v-if="isExpanded(v.number)" class="vol-card__details">
           <div class="vol-detail-field">
             <label>Inicio</label>
-            <input type="date" :value="toDateInput(v.startDate)" @change="patchVolume(v, { startDate: ($event.target as HTMLInputElement).value })" />
+            <DatePicker :model-value="toDateInput(v.startDate)" compact aria-label="Fecha de inicio" @update:model-value="patchVolume(v, { startDate: $event })" />
           </div>
           <div class="vol-detail-field">
             <label>Fin</label>
-            <input type="date" :value="toDateInput(v.finishDate)" @change="patchVolume(v, { finishDate: ($event.target as HTMLInputElement).value })" />
+            <DatePicker :model-value="toDateInput(v.finishDate)" compact aria-label="Fecha de fin" @update:model-value="patchVolume(v, { finishDate: $event })" />
           </div>
           <div class="vol-detail-field vol-detail-field--full">
             <label>Notas</label>
@@ -335,8 +336,8 @@ function displayCover(volume: Volume) {
             </button>
           </td>
 
-          <td><input class="vol-table__input" type="date" :value="toDateInput(v.startDate)" @change="patchVolume(v, { startDate: ($event.target as HTMLInputElement).value })" /></td>
-          <td><input class="vol-table__input" type="date" :value="toDateInput(v.finishDate)" @change="patchVolume(v, { finishDate: ($event.target as HTMLInputElement).value })" /></td>
+          <td><DatePicker :model-value="toDateInput(v.startDate)" compact aria-label="Fecha de inicio" @update:model-value="patchVolume(v, { startDate: $event })" /></td>
+          <td><DatePicker :model-value="toDateInput(v.finishDate)" compact aria-label="Fecha de fin" @update:model-value="patchVolume(v, { finishDate: $event })" /></td>
           <td><input class="vol-table__input" type="text" :value="v.notes || ''" placeholder="—" @change="patchVolume(v, { notes: ($event.target as HTMLInputElement).value })" /></td>
 
           <td class="vol-table__actions">

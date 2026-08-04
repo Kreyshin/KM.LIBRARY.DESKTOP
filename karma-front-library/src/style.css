@@ -243,28 +243,6 @@ button {
   gap: 10px;
 }
 
-.placeholder-card {
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius);
-  padding: 14px;
-  color: var(--text-faint);
-  font-size: 11.5px;
-  line-height: 1.5;
-}
-
-.sidebar-art {
-  height: 90px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--bg-elevated);
-}
-
-.sidebar-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .main {
   flex: 1;
   min-width: 0;

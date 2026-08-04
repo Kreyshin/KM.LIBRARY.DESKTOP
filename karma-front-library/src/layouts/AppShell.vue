@@ -46,6 +46,13 @@ function closeVolumeModal() {
   editingVolume.value = null;
 }
 
+function onVolumeUpdated(obra: any) {
+  store.upsert(obra);
+  editingVolumeObra.value = obra;
+  editingVolume.value = obra.volumes.find((volume: any) => volume.number === editingVolume.value?.number) || null;
+  if (editingObra.value?.id === obra.id) editingObra.value = obra;
+}
+
 function openObraFromVolume() {
   const obra = editingVolumeObra.value;
   closeVolumeModal();
@@ -79,6 +86,7 @@ provide('openVolumeModal', openVolumeModal);
       :volume="editingVolume"
       @close="closeVolumeModal"
       @deleted="closeVolumeModal"
+      @updated="onVolumeUpdated"
       @open-obra="openObraFromVolume"
     />
   </div>

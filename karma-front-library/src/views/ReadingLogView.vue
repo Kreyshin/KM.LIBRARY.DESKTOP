@@ -4,6 +4,7 @@ import { BookOpenCheck, CalendarDays, CheckCircle2, Clock3, Flame, Plus, RotateC
 import { api, type ReadingSession, type ReadingStats, type ReadingUnit } from '../api/client';
 import { useObrasStore } from '../stores/obras';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
+import DatePicker from '../components/DatePicker.vue';
 
 const store = useObrasStore();
 const sessions = ref<ReadingSession[]>([]);
@@ -73,7 +74,7 @@ function sessionProgress(session: ReadingSession) {
       <div class="reading-form-grid">
         <label><span>Obra</span><select v-model="form.obraId" required @change="chooseObra"><option value="">Seleccionar…</option><option v-for="obra in store.obras.value" :key="obra.id" :value="obra.id">{{ obra.titulo }}</option></select></label>
         <label><span>Tomo (opcional)</span><select v-model="form.volumeId"><option value="">Obra general</option><option v-for="volume in selectedObra?.volumes || []" :key="volume.id" :value="volume.id">Tomo {{ volume.number }}{{ volume.title ? ` · ${volume.title}` : '' }}</option></select></label>
-        <label><span>Fecha</span><input v-model="form.occurredAt" type="date" required /></label>
+        <label><span>Fecha</span><DatePicker v-model="form.occurredAt" required aria-label="Fecha de la sesión de lectura" /></label>
         <label><span>Duración (minutos)</span><input v-model.number="form.minutes" type="number" min="0" max="1440" /></label>
         <label><span>Unidad</span><select v-model="form.unit"><option value="CHAPTER">Capítulos</option><option value="PAGE">Páginas</option><option value="PERCENT">Porcentaje</option></select></label>
         <label><span>Progreso inicial</span><input v-model.number="form.startProgress" type="number" min="0" /></label>

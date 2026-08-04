@@ -27,6 +27,7 @@ import {
   type VolumeStatus,
 } from '../api/client';
 import { useObrasStore } from '../stores/obras';
+import DatePicker from './DatePicker.vue';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
 
 const props = defineProps<{ obra: Obra; volume: Volume }>();
@@ -34,6 +35,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'deleted'): void;
   (e: 'open-obra'): void;
+  (e: 'updated', obra: Obra): void;
 }>();
 
 const store = useObrasStore();
@@ -143,6 +145,7 @@ function formatCoverDate(value: string | null) {
 async function refreshStore() {
   const fresh = await api.get(props.obra.id);
   store.upsert(fresh);
+  emit('updated', fresh);
 
   const freshVolume = fresh.volumes.find(
     (volume) => volume.number === props.volume.number,
@@ -682,11 +685,7 @@ function closeModal() {
 
                 <div class="field">
                   <label for="vol-publish-date">Fecha de publicación</label>
-                  <input
-                    id="vol-publish-date"
-                    v-model="f.publishDate"
-                    type="date"
-                  />
+                  <DatePicker id="vol-publish-date" v-model="f.publishDate" aria-label="Fecha de publicación del tomo" />
                 </div>
 
                 <div class="field">
@@ -814,7 +813,7 @@ function closeModal() {
 
                 <div class="field">
                   <label for="alternate-date">Fecha de publicación</label>
-                  <input id="alternate-date" v-model="alternateForm.publishDate" type="date" />
+                  <DatePicker id="alternate-date" v-model="alternateForm.publishDate" aria-label="Fecha de publicación de la edición" />
                 </div>
 
                 <div class="field">
@@ -924,7 +923,7 @@ function closeModal() {
                       <label><span>Tipo de edición</span><select v-model="coverDraft.editionType"><option v-for="type in COVER_EDITION_TYPES" :key="type.value" :value="type.value">{{ type.label }}</option></select></label>
                       <label><span>País</span><input v-model="coverDraft.country" maxlength="100" placeholder="Ej. Japón" /></label>
                       <label><span>ISBN</span><input v-model="coverDraft.isbn" maxlength="40" placeholder="Ej. 978-4-08-873606-9" /></label>
-                      <label><span>Fecha de publicación</span><input v-model="coverDraft.publishDate" type="date" /></label>
+                      <label><span>Fecha de publicación</span><DatePicker v-model="coverDraft.publishDate" aria-label="Fecha de publicación de la portada" /></label>
                       <div class="cover-metadata-editor__actions">
                         <button type="button" class="variant-action" @click="cancelCoverEdit"><X /> Cancelar</button>
                         <button type="submit" class="variant-action variant-action--save" :disabled="alternateBusyId === cover.id"><Save /> Guardar</button>
@@ -982,20 +981,12 @@ function closeModal() {
 
                 <div class="field">
                   <label for="vol-start">Fecha de inicio</label>
-                  <input
-                    id="vol-start"
-                    v-model="f.startDate"
-                    type="date"
-                  />
+                  <DatePicker id="vol-start" v-model="f.startDate" aria-label="Fecha de inicio de lectura" />
                 </div>
 
                 <div class="field">
                   <label for="vol-finish">Fecha de fin</label>
-                  <input
-                    id="vol-finish"
-                    v-model="f.finishDate"
-                    type="date"
-                  />
+                  <DatePicker id="vol-finish" v-model="f.finishDate" aria-label="Fecha de fin de lectura" />
                 </div>
 
                 <div class="field field--full">
@@ -1079,8 +1070,10 @@ function closeModal() {
 </template>
 
 <style scoped>
-.work-modal-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(2,4,10,.78);backdrop-filter:blur(12px)}
-.work-modal{width:min(1220px,100%);max-height:min(940px,94vh);display:flex;flex-direction:column;overflow:hidden;color:var(--text);background:linear-gradient(145deg,rgba(255,255,255,.018),transparent 30%),#080b12;border:1px solid rgba(255,255,255,.075);border-radius:18px;box-shadow:0 34px 90px rgba(0,0,0,.62),0 0 0 1px rgba(159,107,255,.045),0 0 48px rgba(89,39,160,.09)}
+.work-modal-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(2,4,10,.78);backdrop-filter:blur(12px);animation:karma-volume-overlay-in .22s ease-out both}
+.work-modal{width:min(1220px,100%);max-height:min(940px,94vh);display:flex;flex-direction:column;overflow:hidden;color:var(--text);background:linear-gradient(145deg,rgba(255,255,255,.018),transparent 30%),#080b12;border:1px solid rgba(255,255,255,.075);border-radius:18px;box-shadow:0 34px 90px rgba(0,0,0,.62),0 0 0 1px rgba(159,107,255,.045),0 0 48px rgba(89,39,160,.09);animation:karma-volume-modal-in .28s cubic-bezier(.2,.85,.25,1) both}
+@keyframes karma-volume-overlay-in{from{opacity:0}to{opacity:1}}
+@keyframes karma-volume-modal-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 .work-modal__header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:22px 26px 18px;background:rgba(8,11,18,.96);border-bottom:1px solid rgba(255,255,255,.06)}
 .work-modal__eyebrow{display:block;margin-bottom:6px;color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
 .work-modal__header h2{margin:0 0 5px;font-size:21px}
@@ -1094,8 +1087,11 @@ function closeModal() {
 .work-cover-panel{position:sticky;top:0;display:flex;flex-direction:column;gap:10px}
 .cover-dropzone{position:relative;width:100%;aspect-ratio:2/3;padding:0;overflow:hidden;color:var(--text-faint);background:radial-gradient(circle at 50% 35%,rgba(159,107,255,.09),transparent 58%),#0b0f18;border:1px dashed rgba(159,107,255,.38);border-radius:12px;cursor:pointer;transition:.16s}
 .cover-dropzone:hover{border-color:var(--accent);box-shadow:0 0 25px rgba(139,70,245,.13);transform:translateY(-2px)}
-.cover-dropzone.is-busy{opacity:.55;pointer-events:none}
-.cover-dropzone>img{width:100%;height:100%;display:block;object-fit:contain;object-position:center;background:#05070d}
+.cover-dropzone.is-busy{opacity:.82;pointer-events:none}
+.cover-dropzone.is-busy:after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 20%,rgba(185,145,255,.2) 46%,transparent 72%);transform:translateX(-110%);animation:karma-upload-sheen 1.05s ease-in-out infinite}
+.cover-dropzone>img{width:100%;height:100%;display:block;object-fit:contain;object-position:center;background:#05070d;animation:karma-volume-image-reveal .3s ease-out both}
+@keyframes karma-upload-sheen{to{transform:translateX(110%)}}
+@keyframes karma-volume-image-reveal{from{opacity:0;transform:scale(1.025);filter:blur(3px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
 .cover-dropzone__empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:18px;text-align:center}
 .cover-dropzone__icon{width:40px;height:40px;display:grid;place-items:center;margin-bottom:4px;color:var(--accent);background:rgba(159,107,255,.1);border:1px solid rgba(159,107,255,.22);border-radius:12px}
 .cover-dropzone__icon svg{width:20px;height:20px}
