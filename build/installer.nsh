@@ -1,13 +1,34 @@
 !include nsDialogs.nsh
 !include LogicLib.nsh
 !include MUI2.nsh
+!include StrFunc.nsh
 !include WinMessages.nsh
 
 !ifndef BUILD_UNINSTALLER
+${StrTrimNewLines}
+
 Var KarmaDataDirectory
 Var KarmaCurrentDataDirectory
 Var KarmaDataDirectoryInput
 Var KarmaDataBrowseButton
+
+Function KarmaNormalizePath
+  Exch $0
+  Push $1
+  Push $2
+  ${StrTrimNewLines} $0 "$0"
+  GetFullPathName $0 "$0"
+  StrLen $1 $0
+  ${If} $1 > 3
+    StrCpy $2 $0 1 -1
+    ${If} $2 == "\"
+      StrCpy $0 $0 -1
+    ${EndIf}
+  ${EndIf}
+  Pop $2
+  Pop $1
+  Exch $0
+FunctionEnd
 
 !macro customInit
   StrCpy $KarmaCurrentDataDirectory "$APPDATA\karma-library-desktop\data"
@@ -16,6 +37,9 @@ Var KarmaDataBrowseButton
   FileRead $0 $KarmaCurrentDataDirectory
   FileClose $0
   done_reading_location:
+  Push $KarmaCurrentDataDirectory
+  Call KarmaNormalizePath
+  Pop $KarmaCurrentDataDirectory
   StrCpy $KarmaDataDirectory $KarmaCurrentDataDirectory
 !macroend
 
@@ -74,6 +98,11 @@ Function KarmaDataPageLeave
     Abort
   ${EndIf}
 
+  Push $KarmaDataDirectory
+  Call KarmaNormalizePath
+  Pop $KarmaDataDirectory
+  ${NSD_SetText} $KarmaDataDirectoryInput "$KarmaDataDirectory"
+
   StrCmp $KarmaDataDirectory $INSTDIR 0 not_install_directory
   MessageBox MB_ICONEXCLAMATION|MB_OK "La biblioteca no puede guardarse dentro de la carpeta del programa, porque una desinstalación podría eliminar tus datos.$\r$\n$\r$\nCrea una carpeta dedicada, por ejemplo: F:\Karma Library Data"
   Abort
@@ -96,7 +125,7 @@ Function KarmaDataPageLeave
     StrCmp $1 "." continue_checking
     StrCmp $1 ".." continue_checking
     FindClose $0
-    MessageBox MB_ICONEXCLAMATION|MB_OK "La carpeta elegida contiene archivos. Selecciona o crea una carpeta dedicada y vacía."
+    MessageBox MB_ICONEXCLAMATION|MB_OK "La carpeta elegida contiene archivos y no coincide con la ubicación activa.$\r$\n$\r$\nPara actualizar conservando tus datos, usa:$\r$\n$KarmaCurrentDataDirectory$\r$\n$\r$\nPara mover la biblioteca, selecciona una carpeta nueva y vacía."
     Abort
   continue_checking:
     FindNext $0 $1
