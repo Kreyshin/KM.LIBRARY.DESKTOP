@@ -67,3 +67,15 @@ test('rejects the application installation directory and its children', () => {
     assert.throws(() => manager.migrate(path.join(installDir, 'data')), /carpeta donde está instalado/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('deletes an external library only through its validated configured path', () => {
+  const item = fixture();
+  try {
+    const target = path.join(item.root, 'External', 'Karma Library Data');
+    item.manager.migrate(target);
+    const result = item.manager.deleteAllData();
+    assert.equal(result.dataDir, target);
+    assert.equal(result.deleted, true);
+    assert.equal(item.manager.getCurrentDir(), path.join(item.userData, 'data'));
+  } finally { rmSync(item.root, { recursive: true, force: true }); }
+});

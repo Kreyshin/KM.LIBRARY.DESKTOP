@@ -8,6 +8,7 @@ let quitting = false;
 let mainWindow;
 let storageManager;
 const port = 3344;
+const deleteLibraryDataMode = process.argv.includes('--delete-library-data');
 const hasInstanceLock = app.requestSingleInstanceLock();
 if (!hasInstanceLock) app.quit();
 app.on('second-instance', () => {
@@ -184,6 +185,12 @@ ipcMain.handle('storage:move', async (_event, target) => {
   }
 });
 
-if (hasInstanceLock) app.whenReady().then(createWindow).catch((error) => { console.error(error); app.quit(); });
+if (hasInstanceLock && deleteLibraryDataMode) {
+  app.whenReady()
+    .then(() => { storage().deleteAllData(); app.exit(0); })
+    .catch((error) => { console.error(error); app.exit(1); });
+} else if (hasInstanceLock) {
+  app.whenReady().then(createWindow).catch((error) => { console.error(error); app.quit(); });
+}
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('before-quit', () => { quitting = true; if (serverProcess) serverProcess.kill(); });

@@ -1,6 +1,7 @@
 !include nsDialogs.nsh
 !include LogicLib.nsh
 !include MUI2.nsh
+!include WinMessages.nsh
 
 !ifndef BUILD_UNINSTALLER
 Var KarmaDataDirectory
@@ -98,5 +99,77 @@ FunctionEnd
   FileOpen $0 "$APPDATA\karma-library-desktop\pending-data-location.txt" w
   FileWrite $0 "$KarmaDataDirectory"
   FileClose $0
+!macroend
+!endif
+
+!ifdef BUILD_UNINSTALLER
+Var KarmaUninstallChoice
+Var KarmaKeepLibraryRadio
+Var KarmaDeleteLibraryRadio
+
+!macro customUnWelcomePage
+  UninstPage custom un.KarmaUninstallPageCreate un.KarmaUninstallPageLeave
+!macroend
+
+Function un.KarmaUninstallPageCreate
+  !insertmacro MUI_HEADER_TEXT "Desinstalar Karma Library" "Decide qué hacer con tu biblioteca personal."
+  nsDialogs::Create 1018
+  Pop $0
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 15u "KARMA LIBRARY"
+  Pop $0
+  SetCtlColors $0 6D28D9 transparent
+  CreateFont $1 "Segoe UI" 12 700
+  SendMessage $0 ${WM_SETFONT} $1 1
+
+  ${NSD_CreateLabel} 0 19u 100% 20u "Puedes retirar la aplicación sin perder tus libros, imágenes ni estadísticas."
+  Pop $0
+
+  ${NSD_CreateGroupBox} 0 43u 100% 43u "Opción recomendada"
+  Pop $0
+  ${NSD_CreateRadioButton} 10u 56u 92% 12u "Conservar mi biblioteca"
+  Pop $KarmaKeepLibraryRadio
+  ${NSD_Check} $KarmaKeepLibraryRadio
+  ${NSD_CreateLabel} 25u 69u 88% 12u "Podrás recuperarla automáticamente si vuelves a instalar Karma Library."
+  Pop $0
+
+  ${NSD_CreateGroupBox} 0 92u 100% 50u "Borrado completo"
+  Pop $0
+  ${NSD_CreateRadioButton} 10u 105u 92% 12u "Eliminar biblioteca y configuración"
+  Pop $KarmaDeleteLibraryRadio
+  ${NSD_CreateLabel} 25u 118u 88% 20u "Elimina SQLite, imágenes, respaldos, perfiles y configuración. Esta acción no se puede deshacer."
+  Pop $0
+
+  StrCpy $KarmaUninstallChoice "keep"
+  nsDialogs::Show
+FunctionEnd
+
+Function un.KarmaUninstallPageLeave
+  ${NSD_GetState} $KarmaDeleteLibraryRadio $0
+  ${If} $0 == ${BST_CHECKED}
+    MessageBox MB_ICONSTOP|MB_YESNO|MB_DEFBUTTON2 "¿Eliminar permanentemente toda la biblioteca?$\r$\n$\r$\nSe borrarán la base de datos, imágenes, respaldos, perfiles y estadísticas. Esta acción no se puede deshacer." IDYES confirm_full_delete
+    Abort
+    confirm_full_delete:
+      StrCpy $KarmaUninstallChoice "delete"
+  ${Else}
+    StrCpy $KarmaUninstallChoice "keep"
+  ${EndIf}
+FunctionEnd
+
+!macro customUnInstall
+  ${If} $KarmaUninstallChoice == "delete"
+  ${AndIfNot} ${isUpdated}
+    DetailPrint "Eliminando la biblioteca personal verificada..."
+    ExecWait '"$INSTDIR\${PRODUCT_FILENAME}.exe" --delete-library-data' $0
+    ${If} $0 != 0
+      MessageBox MB_ICONSTOP|MB_OK "No se pudo eliminar la biblioteca de forma segura. La desinstalación se cancelará para proteger tus datos."
+      Abort
+    ${EndIf}
+    RMDir /r "$APPDATA\karma-library-desktop"
+    RMDir /r "$APPDATA\Karma Library"
+  ${EndIf}
 !macroend
 !endif

@@ -64,6 +64,10 @@ En **Configuración → Ubicación de la biblioteca** se puede elegir otra carpe
 
 La carpeta de destino debe estar vacía y fuera de la carpeta donde está instalado el programa, porque el desinstalador podría eliminar archivos que estuvieran dentro de ella. Después de completar el traslado la aplicación se reinicia automáticamente. En AppData permanece únicamente un pequeño archivo de texto con la ruta seleccionada.
 
+### Desinstalación
+
+El desinstalador muestra una pantalla de Karma Library con dos opciones. **Conservar mi biblioteca** mantiene los datos para una futura reinstalación y está seleccionada por defecto. **Eliminar completamente** borra la base de datos, imágenes, respaldos y configuración únicamente después de una segunda confirmación.
+
 ## Servidor familiar LAN o NAS
 
 En una PC/NAS con Docker:

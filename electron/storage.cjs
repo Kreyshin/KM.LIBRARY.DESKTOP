@@ -86,6 +86,14 @@ function createStorageManager(userDataDir, options = {}) {
     return { dataDir, defaultDataDir, isCustom: !samePath(dataDir, defaultDataDir), ...inspectDirectory(dataDir) };
   }
 
+  function deleteAllData() {
+    const dataDir = getCurrentDir();
+    if (existsSync(dataDir)) rmSync(dataDir, { recursive: true, force: true });
+    rmSync(locationFile, { force: true });
+    rmSync(pendingFile, { force: true });
+    return { dataDir, deleted: !existsSync(dataDir) };
+  }
+
   function migrate(rawTarget) {
     const source = getCurrentDir();
     const target = normalizeTarget(rawTarget);
@@ -132,7 +140,7 @@ function createStorageManager(userDataDir, options = {}) {
     }
   }
 
-  return { clearPending, getCurrentDir, getInfo, getPendingDir, migrate, normalizeTarget };
+  return { clearPending, deleteAllData, getCurrentDir, getInfo, getPendingDir, migrate, normalizeTarget };
 }
 
 module.exports = { createStorageManager, inspectDirectory };
