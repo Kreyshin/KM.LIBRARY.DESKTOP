@@ -4,6 +4,19 @@
 !include StrFunc.nsh
 !include WinMessages.nsh
 
+Var KarmaUserAppData
+
+!macro KarmaResolveUserAppData
+  ReadEnvStr $KarmaUserAppData "APPDATA"
+  ${If} $KarmaUserAppData == ""
+    ReadRegStr $KarmaUserAppData HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" "AppData"
+    ExpandEnvStrings $KarmaUserAppData "$KarmaUserAppData"
+  ${EndIf}
+  ${If} $KarmaUserAppData == ""
+    StrCpy $KarmaUserAppData "$APPDATA"
+  ${EndIf}
+!macroend
+
 !ifndef BUILD_UNINSTALLER
 ${StrTrimNewLines}
 
@@ -31,10 +44,11 @@ Function KarmaNormalizePath
 FunctionEnd
 
 Function KarmaLoadCurrentDataDirectory
-  StrCpy $KarmaCurrentDataDirectory "$APPDATA\karma-library-desktop\data"
-  IfFileExists "$APPDATA\karma-library-desktop\data-location.txt" 0 normalize_current_location
+  !insertmacro KarmaResolveUserAppData
+  StrCpy $KarmaCurrentDataDirectory "$KarmaUserAppData\karma-library-desktop\data"
+  IfFileExists "$KarmaUserAppData\karma-library-desktop\data-location.txt" 0 normalize_current_location
   ClearErrors
-  FileOpen $0 "$APPDATA\karma-library-desktop\data-location.txt" r
+  FileOpen $0 "$KarmaUserAppData\karma-library-desktop\data-location.txt" r
   ${If} ${Errors}
     Goto normalize_current_location
   ${EndIf}
@@ -45,7 +59,7 @@ Function KarmaLoadCurrentDataDirectory
   Call KarmaNormalizePath
   Pop $KarmaCurrentDataDirectory
   ${If} $KarmaCurrentDataDirectory == ""
-    StrCpy $KarmaCurrentDataDirectory "$APPDATA\karma-library-desktop\data"
+    StrCpy $KarmaCurrentDataDirectory "$KarmaUserAppData\karma-library-desktop\data"
   ${EndIf}
 FunctionEnd
 
@@ -150,8 +164,9 @@ Function KarmaDataPageLeave
 FunctionEnd
 
 !macro customInstall
-  CreateDirectory "$APPDATA\karma-library-desktop"
-  FileOpen $0 "$APPDATA\karma-library-desktop\pending-data-location.txt" w
+  !insertmacro KarmaResolveUserAppData
+  CreateDirectory "$KarmaUserAppData\karma-library-desktop"
+  FileOpen $0 "$KarmaUserAppData\karma-library-desktop\pending-data-location.txt" w
   FileWrite $0 "$KarmaDataDirectory"
   FileClose $0
 !macroend
@@ -215,6 +230,7 @@ Function un.KarmaUninstallPageLeave
 FunctionEnd
 
 !macro customUnInstall
+  !insertmacro KarmaResolveUserAppData
   ${If} $KarmaUninstallChoice == "delete"
   ${AndIfNot} ${isUpdated}
     DetailPrint "Eliminando la biblioteca personal verificada..."
@@ -223,8 +239,8 @@ FunctionEnd
       MessageBox MB_ICONSTOP|MB_OK "No se pudo eliminar la biblioteca de forma segura. La desinstalación se cancelará para proteger tus datos."
       Abort
     ${EndIf}
-    RMDir /r "$APPDATA\karma-library-desktop"
-    RMDir /r "$APPDATA\Karma Library"
+    RMDir /r "$KarmaUserAppData\karma-library-desktop"
+    RMDir /r "$KarmaUserAppData\Karma Library"
   ${EndIf}
 !macroend
 !endif
