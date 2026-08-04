@@ -28,6 +28,7 @@ import {
 import { useObrasStore } from '../stores/obras';
 import TagInput from './TagInput.vue';
 import VolumesTable from './VolumesTable.vue';
+import PurpleSelect from './PurpleSelect.vue';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
 
 type ModalTab = 'details' | 'volumes';
@@ -75,6 +76,7 @@ const error = ref('');
 const genreCatalog = ref<Genre[]>([]);
 const genreNames = computed(() => genreCatalog.value.length ? genreCatalog.value.map((genre) => genre.name) : SUGGESTED_GENRES);
 const supportsDemographic = computed(() => ['MANGA', 'MANHWA', 'MANHUA'].includes(f.value.tipo));
+const languageOptions = LANGUAGES.map((language) => ({ value: language, label: language }));
 
 const modalTitle = computed(() =>
   mode.value === 'create' ? 'Agregar nueva obra' : local.value?.titulo || 'Editar obra',
@@ -425,8 +427,8 @@ function closeModal() {
                     </div>
                   </div>
                   <div class="field"><label>Géneros</label><TagInput v-model="f.genres" :suggestions="genreNames" allow-create placeholder="Busca un género o escribe uno nuevo…" @create="createGenre" /></div>
-                  <div class="field"><label for="language">Idioma</label><select id="language" v-model="f.language"><option value="">Selecciona un idioma</option><option v-for="language in LANGUAGES" :key="language" :value="language">{{ language }}</option></select></div>
-                  <div class="field"><label for="status">Estado *</label><select id="status" v-model="f.status"><option v-for="status in STATUSES" :key="status.value" :value="status.value">{{ status.label }}</option></select></div>
+                  <div class="field"><label>Idioma</label><PurpleSelect v-model="f.language" :options="languageOptions" placeholder="Selecciona un idioma" aria-label="Idioma de la obra" searchable clearable /></div>
+                  <div class="field"><label>Estado *</label><PurpleSelect v-model="f.status" :options="STATUSES" aria-label="Estado de lectura de la obra" /></div>
                   <div class="field"><label for="current-volume">Tomo actual</label><input id="current-volume" v-model="f.currentVolume" type="number" min="0" placeholder="Ej. 3" /></div>
                   <div class="field"><label for="current-chapter">Capítulo actual</label><input id="current-chapter" v-model="f.currentChapter" type="number" min="0" placeholder="Ej. 18" /></div>
                   <div class="field"><label for="chapters">Total de capítulos</label><input id="chapters" v-model="f.totalChapters" type="number" min="0" placeholder="Ej. 24" /></div>

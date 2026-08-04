@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { BookOpenCheck, CalendarDays, CheckCircle2, Clock3, Flame, Plus, RotateCcw, Trash2 } from 'lucide-vue-next';
 import { api, type ReadingSession, type ReadingStats, type ReadingUnit } from '../api/client';
 import { useObrasStore } from '../stores/obras';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
 import DatePicker from '../components/DatePicker.vue';
+import PurpleSelect from '../components/PurpleSelect.vue';
 
 const store = useObrasStore();
 const sessions = ref<ReadingSession[]>([]);
@@ -15,10 +16,23 @@ const showForm = ref(false);
 const form = reactive({ obraId: '', volumeId: '', occurredAt: new Date().toISOString().slice(0, 10), minutes: 30, startProgress: 0, endProgress: 0, unit: 'CHAPTER' as ReadingUnit, rereadNumber: 1, completed: false, notes: '' });
 
 const selectedObra = computed(() => store.obras.value.find((obra) => obra.id === form.obraId));
+const obraOptions = computed(() => [...store.obras.value].sort((a, b) => a.titulo.localeCompare(b.titulo, 'es')).map((obra) => ({ value: obra.id, label: obra.titulo, description: obra.autor || undefined })));
+const volumeOptions = computed(() => (selectedObra.value?.volumes || []).slice().sort((a, b) => a.number - b.number).map((volume) => ({ value: volume.id, label: `Tomo ${volume.number}`, description: volume.title || undefined })));
+const unitOptions = [
+  { value: 'CHAPTER', label: 'Capítulos' },
+  { value: 'PAGE', label: 'Páginas' },
+  { value: 'PERCENT', label: 'Porcentaje' },
+];
 const maxActivity = computed(() => Math.max(1, ...(stats.value?.activity.map((item) => item.minutes) || [1])));
 const unitLabels: Record<ReadingUnit, string> = { CHAPTER: 'capítulos', PAGE: 'páginas', PERCENT: '%' };
 
-onMounted(async () => { await store.load(); await load(); });
+function onTimerSessionCreated() { void load(); }
+onMounted(async () => {
+  window.addEventListener('karma:reading-session-created', onTimerSessionCreated);
+  await store.load();
+  await load();
+});
+onBeforeUnmount(() => window.removeEventListener('karma:reading-session-created', onTimerSessionCreated));
 
 async function load() {
   loading.value = true;
@@ -72,11 +86,11 @@ function sessionProgress(session: ReadingSession) {
     <form v-if="showForm" class="reading-session-form card" @submit.prevent="submit">
       <div class="reading-form-heading"><div><span>NUEVA ENTRADA</span><h2>¿Qué leíste hoy?</h2></div><button type="button" @click="showForm = false">Cerrar</button></div>
       <div class="reading-form-grid">
-        <label><span>Obra</span><select v-model="form.obraId" required @change="chooseObra"><option value="">Seleccionar…</option><option v-for="obra in store.obras.value" :key="obra.id" :value="obra.id">{{ obra.titulo }}</option></select></label>
-        <label><span>Tomo (opcional)</span><select v-model="form.volumeId"><option value="">Obra general</option><option v-for="volume in selectedObra?.volumes || []" :key="volume.id" :value="volume.id">Tomo {{ volume.number }}{{ volume.title ? ` · ${volume.title}` : '' }}</option></select></label>
+        <label><span>Obra</span><PurpleSelect v-model="form.obraId" :options="obraOptions" placeholder="Seleccionar…" aria-label="Obra de la sesión" searchable @change="chooseObra" /></label>
+        <label><span>Tomo (opcional)</span><PurpleSelect v-model="form.volumeId" :options="volumeOptions" placeholder="Obra general" aria-label="Tomo de la sesión" clearable :disabled="!form.obraId" /></label>
         <label><span>Fecha</span><DatePicker v-model="form.occurredAt" required aria-label="Fecha de la sesión de lectura" /></label>
         <label><span>Duración (minutos)</span><input v-model.number="form.minutes" type="number" min="0" max="1440" /></label>
-        <label><span>Unidad</span><select v-model="form.unit"><option value="CHAPTER">Capítulos</option><option value="PAGE">Páginas</option><option value="PERCENT">Porcentaje</option></select></label>
+        <label><span>Unidad</span><PurpleSelect v-model="form.unit" :options="unitOptions" aria-label="Unidad de progreso" /></label>
         <label><span>Progreso inicial</span><input v-model.number="form.startProgress" type="number" min="0" /></label>
         <label><span>Progreso final</span><input v-model.number="form.endProgress" type="number" min="0" /></label>
         <label><span>N.º de lectura</span><input v-model.number="form.rereadNumber" type="number" min="1" max="100" /></label>

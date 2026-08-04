@@ -2,6 +2,7 @@
 import { SlidersHorizontal, RotateCcw } from 'lucide-vue-next';
 import { DEMOGRAPHICS, FORMATS, LANGUAGES, STATUSES, VOLUME_OWNERSHIP } from '../api/client';
 import { createCollectionFilters, type CollectionFiltersState } from '../composables/collectionFilters';
+import PurpleSelect from './PurpleSelect.vue';
 
 const props = withDefaults(defineProps<{
   genres?: string[];
@@ -12,6 +13,10 @@ const props = withDefaults(defineProps<{
 
 const model = defineModel<CollectionFiltersState>({ required: true });
 const emit = defineEmits<{ (event: 'clear'): void }>();
+const formatOptions = [{ value: 'ALL', label: 'Todos' }, ...FORMATS];
+const demographicOptions = [{ value: 'ALL', label: 'Todas' }, ...DEMOGRAPHICS];
+const statusOptions = [{ value: 'ALL', label: 'Todos' }, ...STATUSES];
+const ownershipOptions = [{ value: 'ALL', label: 'Cualquier estado' }, ...VOLUME_OWNERSHIP];
 
 function toggleGenre(genre: string) {
   model.value.genres = model.value.genres.includes(genre)
@@ -40,42 +45,27 @@ function clear() {
 
     <label class="collection-filter-field">
       <span>Formato</span>
-      <select v-model="model.format">
-        <option value="ALL">Todos</option>
-        <option v-for="format in FORMATS" :key="format.value" :value="format.value">{{ format.label }}</option>
-      </select>
+      <PurpleSelect v-model="model.format" :options="formatOptions" aria-label="Filtrar por formato" compact />
     </label>
 
     <label class="collection-filter-field">
       <span>Demografía</span>
-      <select v-model="model.demographic">
-        <option value="ALL">Todas</option>
-        <option v-for="item in DEMOGRAPHICS" :key="item.value" :value="item.value">{{ item.label }}</option>
-      </select>
+      <PurpleSelect v-model="model.demographic" :options="demographicOptions" aria-label="Filtrar por demografía" compact />
     </label>
 
     <label class="collection-filter-field">
       <span>Estado de lectura</span>
-      <select v-model="model.status">
-        <option value="ALL">Todos</option>
-        <option v-for="status in STATUSES" :key="status.value" :value="status.value">{{ status.label }}</option>
-      </select>
+      <PurpleSelect v-model="model.status" :options="statusOptions" aria-label="Filtrar por estado" compact />
     </label>
 
     <label class="collection-filter-field">
       <span>Adquisición</span>
-      <select v-model="model.ownership">
-        <option value="ALL">Cualquier estado</option>
-        <option v-for="ownership in VOLUME_OWNERSHIP" :key="ownership.value" :value="ownership.value">{{ ownership.label }}</option>
-      </select>
+      <PurpleSelect v-model="model.ownership" :options="ownershipOptions" aria-label="Filtrar por adquisición" compact />
     </label>
 
     <label class="collection-filter-field">
       <span>Editorial</span>
-      <select v-model="model.publisher">
-        <option value="">Todas</option>
-        <option v-for="publisher in publishers" :key="publisher" :value="publisher">{{ publisher }}</option>
-      </select>
+      <PurpleSelect v-model="model.publisher" :options="publishers.map(publisher => ({ value: publisher, label: publisher }))" placeholder="Todas" aria-label="Filtrar por editorial" searchable clearable compact />
     </label>
 
     <label class="collection-filter-field">
@@ -85,10 +75,7 @@ function clear() {
 
     <label class="collection-filter-field">
       <span>Idioma</span>
-      <select v-model="model.language">
-        <option value="">Todos</option>
-        <option v-for="language in LANGUAGES" :key="language" :value="language">{{ language }}</option>
-      </select>
+      <PurpleSelect v-model="model.language" :options="LANGUAGES.map(language => ({ value: language, label: language }))" placeholder="Todos" aria-label="Filtrar por idioma" searchable clearable compact />
     </label>
 
     <div class="collection-filter-field">

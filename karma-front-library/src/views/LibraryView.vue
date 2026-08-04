@@ -7,6 +7,7 @@ import { type FormatType, type Obra, type ReadingStatus } from '../api/client';
 import { createCollectionFilters, hasActiveCollectionFilters, matchesCollectionFilters } from '../composables/collectionFilters';
 import CollectionFilters from '../components/CollectionFilters.vue';
 import WorkCard from '../components/WorkCard.vue';
+import PurpleSelect from '../components/PurpleSelect.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,6 +23,11 @@ const filters = ref(createCollectionFilters({
 const sortBy = ref<'recent' | 'title' | 'rating'>('recent');
 const page = ref(1);
 const pageSize = 20;
+const sortOptions = [
+  { value: 'recent', label: 'Añadido recientemente' },
+  { value: 'title', label: 'Título' },
+  { value: 'rating', label: 'Calificación' },
+];
 
 onMounted(() => store.load());
 
@@ -89,11 +95,7 @@ function clearFilters() {
             <input v-model="filters.query" type="search" aria-label="Buscar en la colección" placeholder="Buscar título, autor, editorial o etiqueta…" />
           </label>
           <button type="button" class="favorite-filter" :class="{ active: filters.favoritesOnly }" :aria-pressed="filters.favoritesOnly" @click="filters.favoritesOnly = !filters.favoritesOnly"><Heart :fill="filters.favoritesOnly ? 'currentColor' : 'none'" /> Favoritos</button>
-          <select v-model="sortBy" class="filter-select library-sort" aria-label="Ordenar resultados">
-            <option value="recent">Añadido recientemente</option>
-            <option value="title">Título</option>
-            <option value="rating">Calificación</option>
-          </select>
+          <PurpleSelect v-model="sortBy" :options="sortOptions" class="library-sort" aria-label="Ordenar resultados" compact />
         </div>
 
         <div class="results-count" aria-live="polite">

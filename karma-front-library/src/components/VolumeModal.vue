@@ -28,6 +28,7 @@ import {
 } from '../api/client';
 import { useObrasStore } from '../stores/obras';
 import DatePicker from './DatePicker.vue';
+import PurpleSelect from './PurpleSelect.vue';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
 
 const props = defineProps<{ obra: Obra; volume: Volume }>();
@@ -86,6 +87,7 @@ const alternateBusyId = ref<string | null>(null);
 const editingCoverId = ref<string | null>(null);
 const coverDraft = ref({ language: '', publisher: '', edition: '', country: '', isbn: '', publishDate: '', label: '', editionType: 'STANDARD' as VolumeCoverVariant['editionType'] });
 const error = ref('');
+const languageOptions = LANGUAGES.map((language) => ({ value: language, label: language }));
 
 function toDateInput(value: string | null) {
   return value ? value.slice(0, 10) : '';
@@ -690,15 +692,7 @@ function closeModal() {
 
                 <div class="field">
                   <label for="vol-ownership">Tipo de propiedad</label>
-                  <select id="vol-ownership" v-model="f.ownership">
-                    <option
-                      v-for="ownership in VOLUME_OWNERSHIP"
-                      :key="ownership.value"
-                      :value="ownership.value"
-                    >
-                      {{ ownership.label }}
-                    </option>
-                  </select>
+                  <PurpleSelect v-model="f.ownership" :options="VOLUME_OWNERSHIP" aria-label="Tipo de propiedad" />
                 </div>
               </div>
             </section>
@@ -759,19 +753,7 @@ function closeModal() {
                 </p>
                 <div class="field">
                   <label for="alternate-language">Idioma</label>
-                  <select
-                    id="alternate-language"
-                    v-model="alternateForm.language"
-                  >
-                    <option value="">Sin especificar</option>
-                    <option
-                      v-for="language in LANGUAGES"
-                      :key="language"
-                      :value="language"
-                    >
-                      {{ language }}
-                    </option>
-                  </select>
+                  <PurpleSelect v-model="alternateForm.language" :options="languageOptions" placeholder="Sin especificar" aria-label="Idioma de la edición" searchable clearable />
                 </div>
 
                 <div class="field">
@@ -796,9 +778,7 @@ function closeModal() {
 
                 <div class="field">
                   <label for="alternate-edition-type">Tipo de edición</label>
-                  <select id="alternate-edition-type" v-model="alternateForm.editionType">
-                    <option v-for="type in COVER_EDITION_TYPES" :key="type.value" :value="type.value">{{ type.label }}</option>
-                  </select>
+                  <PurpleSelect v-model="alternateForm.editionType" :options="COVER_EDITION_TYPES" aria-label="Tipo de edición" />
                 </div>
 
                 <div class="field">
@@ -918,9 +898,9 @@ function closeModal() {
                     <form v-else class="cover-metadata-editor" @submit.prevent="saveCoverMetadata(cover)">
                       <label><span>Nombre visible</span><input v-model="coverDraft.label" maxlength="160" placeholder="Ej. Portada japonesa" /></label>
                       <label><span>Editorial</span><input v-model="coverDraft.publisher" maxlength="160" placeholder="Ej. Shueisha" /></label>
-                      <label><span>Idioma</span><select v-model="coverDraft.language"><option value="">Sin especificar</option><option v-for="language in LANGUAGES" :key="language" :value="language">{{ language }}</option></select></label>
+                      <label><span>Idioma</span><PurpleSelect v-model="coverDraft.language" :options="languageOptions" placeholder="Sin especificar" aria-label="Idioma de la portada" searchable clearable /></label>
                       <label><span>Edición</span><input v-model="coverDraft.edition" maxlength="160" placeholder="Ej. Primera edición" /></label>
-                      <label><span>Tipo de edición</span><select v-model="coverDraft.editionType"><option v-for="type in COVER_EDITION_TYPES" :key="type.value" :value="type.value">{{ type.label }}</option></select></label>
+                      <label><span>Tipo de edición</span><PurpleSelect v-model="coverDraft.editionType" :options="COVER_EDITION_TYPES" aria-label="Tipo de edición de la portada" /></label>
                       <label><span>País</span><input v-model="coverDraft.country" maxlength="100" placeholder="Ej. Japón" /></label>
                       <label><span>ISBN</span><input v-model="coverDraft.isbn" maxlength="40" placeholder="Ej. 978-4-08-873606-9" /></label>
                       <label><span>Fecha de publicación</span><DatePicker v-model="coverDraft.publishDate" aria-label="Fecha de publicación de la portada" /></label>
@@ -958,15 +938,7 @@ function closeModal() {
               <div class="form-grid">
                 <div class="field">
                   <label for="vol-status">Estado</label>
-                  <select id="vol-status" v-model="f.status">
-                    <option
-                      v-for="status in VOLUME_STATUSES"
-                      :key="status.value"
-                      :value="status.value"
-                    >
-                      {{ status.label }}
-                    </option>
-                  </select>
+                  <PurpleSelect v-model="f.status" :options="VOLUME_STATUSES" aria-label="Estado de lectura del tomo" />
                 </div>
 
                 <div class="field">

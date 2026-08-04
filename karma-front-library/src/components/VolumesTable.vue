@@ -23,6 +23,7 @@ import {
 } from '../api/client';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
 import DatePicker from './DatePicker.vue';
+import PurpleSelect from './PurpleSelect.vue';
 
 const props = defineProps<{ obraId: string; obra: Obra; volumes: Volume[] }>();
 const emit = defineEmits<{ (e: 'changed'): void }>();
@@ -38,16 +39,6 @@ const busy = ref<number | null>(null);
 const expanded = ref<Set<number>>(new Set());
 
 const readCount = computed(() => props.volumes.filter((v) => v.read).length);
-
-const STATUS_CLASS: Record<VolumeStatus, string> = {
-  OWNED: 'is-owned',
-  READING: 'is-reading',
-  NOT_READ: 'is-not-read',
-};
-
-function statusClass(status: VolumeStatus) {
-  return STATUS_CLASS[status] || 'is-not-read';
-}
 
 function isExpanded(number: number) {
   return expanded.value.has(number);
@@ -214,26 +205,26 @@ function displayCover(volume: Volume) {
         <div class="vol-card__fields">
           <label class="vol-card__field">
             <span>Adquisición</span>
-            <select
-              class="vol-status-select vol-ownership-select"
-              :class="{ 'is-not-owned': v.ownership === 'NOT_OWNED', 'is-acquired': v.ownership !== 'NOT_OWNED' }"
-              :value="v.ownership"
-              @change="patchVolume(v, { ownership: ($event.target as HTMLSelectElement).value as VolumeOwnership })"
-            >
-              <option v-for="option in VOLUME_OWNERSHIP" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
+            <PurpleSelect
+              class="volume-purple-select"
+              :model-value="v.ownership"
+              :options="VOLUME_OWNERSHIP"
+              aria-label="Estado de adquisición"
+              compact
+              @update:model-value="patchVolume(v, { ownership: $event as VolumeOwnership })"
+            />
           </label>
 
           <label class="vol-card__field">
             <span>Estado de lectura</span>
-            <select
-              class="vol-status-select"
-              :class="statusClass(v.status)"
-              :value="v.status"
-              @change="patchVolume(v, { status: ($event.target as HTMLSelectElement).value as VolumeStatus })"
-            >
-              <option v-for="s in VOLUME_STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
-            </select>
+            <PurpleSelect
+              class="volume-purple-select"
+              :model-value="v.status"
+              :options="VOLUME_STATUSES"
+              aria-label="Estado de lectura"
+              compact
+              @update:model-value="patchVolume(v, { status: $event as VolumeStatus })"
+            />
           </label>
 
           <label class="vol-card__field">
@@ -323,9 +314,7 @@ function displayCover(volume: Volume) {
           </td>
 
           <td>
-            <select class="vol-status-select vol-status-select--table" :class="statusClass(v.status)" :value="v.status" @change="patchVolume(v, { status: ($event.target as HTMLSelectElement).value as VolumeStatus })">
-              <option v-for="s in VOLUME_STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
-            </select>
+            <PurpleSelect class="volume-purple-select volume-purple-select--table" :model-value="v.status" :options="VOLUME_STATUSES" aria-label="Estado de lectura" compact @update:model-value="patchVolume(v, { status: $event as VolumeStatus })" />
           </td>
 
           <td><input class="vol-table__input" type="text" :value="v.chapters || ''" placeholder="1 – 10" @change="patchVolume(v, { chapters: ($event.target as HTMLInputElement).value })" /></td>
@@ -469,6 +458,7 @@ function displayCover(volume: Volume) {
 .vol-table__thumb:hover .vol-thumb-hint { opacity:1; }
 
 .vol-status-select--table { height:28px; font-size:10.5px; }
+.volume-purple-select{width:100%}.volume-purple-select--table{min-width:112px}
 .vol-table__input { width:100%; min-width:76px; height:28px; padding:0 8px; color:var(--text); background:#080b12; border:1px solid rgba(255,255,255,.08); border-radius:6px; font:11.5px inherit; outline:none; }
 .vol-table__input:focus { border-color:rgba(159,107,255,.6); box-shadow:0 0 0 3px rgba(159,107,255,.08); }
 

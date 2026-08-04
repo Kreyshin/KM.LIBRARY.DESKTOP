@@ -18,7 +18,10 @@ const invalid = ref(false);
 const displayValue = ref('');
 const popoverStyle = ref<Record<string, string>>({});
 const monthCursor = ref(startOfMonth(parseIso(model.value) || new Date()));
+const panel = ref<'days' | 'months' | 'years'>('days');
+const yearPageStart = ref(monthCursor.value.getFullYear() - 5);
 const weekdays = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+const monthNames = Array.from({ length: 12 }, (_, month) => new Intl.DateTimeFormat('es-PE', { month: 'short' }).format(new Date(2020, month, 1)).replace('.', ''));
 
 function startOfMonth(date: Date) { return new Date(date.getFullYear(), date.getMonth(), 1); }
 function isoDate(date: Date) {
@@ -54,7 +57,8 @@ watch(model, (value) => {
   setValidity(true);
 }, { immediate: true });
 
-const monthLabel = computed(() => new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric' }).format(monthCursor.value));
+const currentMonthLabel = computed(() => new Intl.DateTimeFormat('es-PE', { month: 'long' }).format(monthCursor.value));
+const yearOptions = computed(() => Array.from({ length: 12 }, (_, index) => yearPageStart.value + index));
 const calendarDays = computed(() => {
   const first = monthCursor.value;
   const mondayOffset = (first.getDay() + 6) % 7;
@@ -90,6 +94,8 @@ async function toggleCalendar() {
   open.value = !open.value;
   if (open.value) {
     monthCursor.value = startOfMonth(parseIso(model.value) || new Date());
+    panel.value = 'days';
+    yearPageStart.value = monthCursor.value.getFullYear() - 5;
     await nextTick();
     updatePopoverPosition();
   }
@@ -103,6 +109,24 @@ function selectDate(date: Date) {
   input.value?.focus();
 }
 function changeMonth(amount: number) { monthCursor.value = new Date(monthCursor.value.getFullYear(), monthCursor.value.getMonth() + amount, 1); }
+function navigate(amount: number) {
+  if (panel.value === 'years') yearPageStart.value += amount * 12;
+  else if (panel.value === 'months') monthCursor.value = new Date(monthCursor.value.getFullYear() + amount, monthCursor.value.getMonth(), 1);
+  else changeMonth(amount);
+}
+function showMonths() { panel.value = panel.value === 'months' ? 'days' : 'months'; }
+function showYears() {
+  panel.value = panel.value === 'years' ? 'days' : 'years';
+  yearPageStart.value = monthCursor.value.getFullYear() - 5;
+}
+function selectMonth(month: number) {
+  monthCursor.value = new Date(monthCursor.value.getFullYear(), month, 1);
+  panel.value = 'days';
+}
+function selectYear(year: number) {
+  monthCursor.value = new Date(year, monthCursor.value.getMonth(), 1);
+  panel.value = 'days';
+}
 function clearDate() { model.value = ''; displayValue.value = ''; setValidity(!props.required); open.value = false; input.value?.focus(); }
 function updatePopoverPosition() {
   if (!open.value || !root.value) return;
@@ -147,13 +171,25 @@ onBeforeUnmount(() => {
       <Transition name="date-popover">
       <section v-if="open" ref="popover" class="date-picker__popover" :style="popoverStyle" aria-label="Calendario">
         <header>
-          <button type="button" aria-label="Mes anterior" @click="changeMonth(-1)"><ChevronLeft /></button>
-          <strong>{{ monthLabel }}</strong>
-          <button type="button" aria-label="Mes siguiente" @click="changeMonth(1)"><ChevronRight /></button>
+          <button type="button" :aria-label="panel === 'years' ? 'Años anteriores' : panel === 'months' ? 'Año anterior' : 'Mes anterior'" @click="navigate(-1)"><ChevronLeft /></button>
+          <div v-if="panel !== 'years'" class="date-picker__period">
+            <button type="button" class="date-picker__period-button" @click="showMonths">{{ currentMonthLabel }}</button>
+            <button type="button" class="date-picker__period-button" @click="showYears">{{ monthCursor.getFullYear() }}</button>
+          </div>
+          <button v-else type="button" class="date-picker__year-range" @click="panel = 'days'">{{ yearPageStart }} — {{ yearPageStart + 11 }}</button>
+          <button type="button" :aria-label="panel === 'years' ? 'Años siguientes' : panel === 'months' ? 'Año siguiente' : 'Mes siguiente'" @click="navigate(1)"><ChevronRight /></button>
         </header>
-        <div class="date-picker__weekdays"><span v-for="weekday in weekdays" :key="weekday">{{ weekday }}</span></div>
-        <div class="date-picker__days">
-          <button v-for="item in calendarDays" :key="item.iso" type="button" :class="{ outside: item.outside, today: item.today, selected: item.selected }" :aria-label="new Intl.DateTimeFormat('es-PE', { dateStyle: 'long' }).format(item.date)" @click="selectDate(item.date)">{{ item.day }}</button>
+        <template v-if="panel === 'days'">
+          <div class="date-picker__weekdays"><span v-for="weekday in weekdays" :key="weekday">{{ weekday }}</span></div>
+          <div class="date-picker__days">
+            <button v-for="item in calendarDays" :key="item.iso" type="button" :class="{ outside: item.outside, today: item.today, selected: item.selected }" :aria-label="new Intl.DateTimeFormat('es-PE', { dateStyle: 'long' }).format(item.date)" @click="selectDate(item.date)">{{ item.day }}</button>
+          </div>
+        </template>
+        <div v-else-if="panel === 'months'" class="date-picker__month-grid">
+          <button v-for="(month, index) in monthNames" :key="month" type="button" :class="{ selected: index === monthCursor.getMonth() }" @click="selectMonth(index)">{{ month }}</button>
+        </div>
+        <div v-else class="date-picker__year-grid">
+          <button v-for="year in yearOptions" :key="year" type="button" :class="{ selected: year === monthCursor.getFullYear(), today: year === new Date().getFullYear() }" @click="selectYear(year)">{{ year }}</button>
         </div>
         <footer><button type="button" @click="clearDate">Limpiar</button><button type="button" @click="selectDate(new Date())">Hoy</button></footer>
       </section>
@@ -164,4 +200,5 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .date-picker{position:relative;width:100%}.date-picker__control{position:relative;display:flex;align-items:center}.date-picker__control input{width:100%;height:38px;padding:0 68px 0 11px;color:var(--text);background:#080b12;border:1px solid rgba(255,255,255,.075);border-radius:8px;outline:0;font:12.5px inherit;font-variant-numeric:tabular-nums;transition:border-color .18s,box-shadow .18s,background .18s}.date-picker__control input:focus{border-color:rgba(159,107,255,.72);background:#0b0d15;box-shadow:0 0 0 3px rgba(159,107,255,.09)}.date-picker--invalid .date-picker__control input{border-color:rgba(248,113,113,.7);box-shadow:0 0 0 3px rgba(248,113,113,.08)}.date-picker__toggle,.date-picker__clear{position:absolute;right:4px;width:30px;height:30px;display:grid;place-items:center;padding:0;color:#ad8be2;background:rgba(159,107,255,.08);border:1px solid rgba(159,107,255,.14);border-radius:6px;cursor:pointer;transition:.18s}.date-picker__toggle:hover,.date-picker--open .date-picker__toggle{color:#fff;background:rgba(159,107,255,.18);border-color:rgba(192,132,252,.4)}.date-picker__clear{right:36px;color:var(--text-faint);background:transparent;border-color:transparent}.date-picker__clear:hover{color:#fca5a5;background:rgba(248,113,113,.07)}.date-picker__toggle svg,.date-picker__clear svg{width:14px}.date-picker__popover{position:fixed;z-index:3500;width:292px;padding:12px;color:var(--text);background:linear-gradient(145deg,#171020,#090c13 55%);border:1px solid rgba(192,132,252,.25);border-radius:13px;box-shadow:0 24px 65px rgba(0,0,0,.65),0 0 30px rgba(109,40,217,.12);transform-origin:top left;backdrop-filter:blur(18px)}.date-picker__popover:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,#a855f7,transparent)}.date-picker__popover header{display:grid;grid-template-columns:30px 1fr 30px;align-items:center;margin-bottom:10px}.date-picker__popover header strong{text-align:center;text-transform:capitalize;font-size:11px}.date-picker__popover header button{width:29px;height:29px;display:grid;place-items:center;padding:0;color:#bcb2ca;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:7px;cursor:pointer}.date-picker__popover header button:hover{color:#fff;background:rgba(159,107,255,.12);border-color:rgba(159,107,255,.28)}.date-picker__popover header svg{width:14px}.date-picker__weekdays,.date-picker__days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.date-picker__weekdays{margin-bottom:4px}.date-picker__weekdays span{text-align:center;color:#796d89;font-size:7.5px;font-weight:800;text-transform:uppercase}.date-picker__days button{position:relative;aspect-ratio:1;display:grid;place-items:center;padding:0;color:#c9c3d2;background:transparent;border:1px solid transparent;border-radius:7px;font-size:9.5px;cursor:pointer;transition:transform .14s,background .14s,border-color .14s,color .14s}.date-picker__days button:hover{z-index:1;transform:translateY(-1px);color:#fff;background:rgba(159,107,255,.13);border-color:rgba(159,107,255,.26)}.date-picker__days button.outside{color:#51495e}.date-picker__days button.today:after{content:"";position:absolute;bottom:3px;width:3px;height:3px;background:#c084fc;border-radius:50%}.date-picker__days button.selected{color:#fff;background:linear-gradient(135deg,#a855f7,#6d28d9);border-color:rgba(233,213,255,.4);box-shadow:0 5px 13px rgba(109,40,217,.3);font-weight:800}.date-picker__days button.selected:after{background:#fff}.date-picker__popover footer{display:flex;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.055)}.date-picker__popover footer button{padding:5px 8px;color:#b998eb;background:transparent;border:0;border-radius:6px;font:750 8.5px inherit;cursor:pointer}.date-picker__popover footer button:hover{color:#fff;background:rgba(159,107,255,.1)}.date-popover-enter-active,.date-popover-leave-active{transition:opacity .18s ease,transform .2s cubic-bezier(.2,.8,.2,1)}.date-popover-enter-from,.date-popover-leave-to{opacity:0;transform:translateY(-5px) scale(.97)}.date-picker--compact .date-picker__control input{height:32px;padding-right:56px;font-size:10px}.date-picker--compact .date-picker__toggle,.date-picker--compact .date-picker__clear{width:25px;height:25px}.date-picker--compact .date-picker__clear{right:30px}
+.date-picker__period{display:flex;align-items:center;justify-content:center;gap:4px}.date-picker__popover header .date-picker__period-button,.date-picker__popover header .date-picker__year-range{width:auto;height:27px;padding:0 7px;color:#e9ddfa;background:rgba(159,107,255,.07);border-color:rgba(159,107,255,.12);font-size:10px;font-weight:800;text-transform:capitalize}.date-picker__popover header .date-picker__year-range{justify-self:center}.date-picker__month-grid,.date-picker__year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;min-height:190px;align-content:center}.date-picker__month-grid button,.date-picker__year-grid button{height:38px;color:#c9c3d2;background:rgba(255,255,255,.018);border:1px solid rgba(255,255,255,.055);border-radius:8px;font:700 10px inherit;text-transform:capitalize;cursor:pointer;transition:.16s ease}.date-picker__month-grid button:hover,.date-picker__year-grid button:hover{color:#fff;background:rgba(159,107,255,.13);border-color:rgba(159,107,255,.3);transform:translateY(-1px)}.date-picker__month-grid button.selected,.date-picker__year-grid button.selected{color:#fff;background:linear-gradient(135deg,#a855f7,#6d28d9);border-color:rgba(233,213,255,.35);box-shadow:0 6px 16px rgba(109,40,217,.22)}.date-picker__year-grid button.today:not(.selected){color:#cfadff;border-color:rgba(159,107,255,.27)}
 </style>
