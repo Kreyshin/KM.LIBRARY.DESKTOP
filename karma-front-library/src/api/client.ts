@@ -183,6 +183,11 @@ export interface Shelf { id: string; name: string; description: string | null; c
 export interface ShelvesResponse { custom: Shelf[]; smart: Shelf[]; }
 export interface Genre { id: string; name: string; slug: string; isStandard: boolean; createdAt: string; }
 
+export interface BackupItem { name: string; sizeBytes: number; createdAt: string; }
+export interface BackupSettings { autoEnabled: boolean; intervalHours: number; retention: number; lastRunAt: string | null; }
+export interface BackupsResponse { items: BackupItem[]; settings: BackupSettings; }
+export interface BackupVerifyResult { ok: boolean; issues: string[]; checkedAt: string; entryCount: number; }
+
 export type ObraInput = Partial<Omit<Obra, 'id' | 'createdAt' | 'volumes' | 'coverPath'>> & {
   totalVolumes?: number;
 };
@@ -339,6 +344,11 @@ export const api = {
   removeShelfItem: (id: string, obraId: string) => request<Shelf>(`/shelves/${id}/items/${obraId}`, { method: 'DELETE' }),
   reorderShelfItems: (id: string, obraIds: string[]) => request<Shelf>(`/shelves/${id}/reorder`, { method: 'PATCH', body: JSON.stringify({ obraIds }) }),
   createBackup: () => request<{ name: string; downloadUrl: string }>('/system/backups', { method: 'POST' }),
+  listBackups: () => request<BackupsResponse>('/system/backups'),
+  updateBackupSettings: (data: Partial<BackupSettings>) => request<BackupSettings>('/system/backups/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  verifyBackup: (name: string) => request<BackupVerifyResult>(`/system/backups/${encodeURIComponent(name)}/verify`),
+  restoreBackupByName: (name: string) => request<{ restored: boolean; restarting: boolean }>(`/system/backups/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
+  removeBackup: (name: string) => request<{ deleted: boolean }>(`/system/backups/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   restoreBackup: (file: File) => { const form = new FormData(); form.append('file', file); return request<{ restored: boolean; restarting: boolean }>('/system/restore', { method: 'POST', body: form }); },
   downloadBackup: async (downloadUrl: string) => {
     const token = localStorage.getItem('karma_reader_token');

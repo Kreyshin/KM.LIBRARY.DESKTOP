@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router';
 import {
   Home, LibraryBig, LayoutGrid, BookOpenCheck,
-  BarChart3, Users, Settings, UserRound,
+  BarChart3, Users, Settings, UserRound, DatabaseBackup,
 } from 'lucide-vue-next';
 import logoMark from '../assets/brand/logo-mark.png';
 import ReadingTimer from './ReadingTimer.vue';
@@ -17,6 +17,7 @@ const items = [
   { to: '/statistics', label: 'Estadísticas', icon: BarChart3 },
   { to: '/authors', label: 'Autores', icon: Users },
   { to: '/profile', label: 'Mi perfil', icon: UserRound },
+  { to: '/backups', label: 'Respaldos', icon: DatabaseBackup },
   { to: '/settings', label: 'Configuración', icon: Settings },
 ];
 </script>

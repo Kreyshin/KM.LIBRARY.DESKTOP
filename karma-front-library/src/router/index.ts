@@ -12,6 +12,7 @@ const routes = [
   { path: '/authors', name: 'authors', component: () => import('../views/AuthorsView.vue'), meta: { title: 'Autores' } },
   { path: '/tags', redirect: '/library' },
   { path: '/favorites', redirect: { path: '/library', query: { favorite: '1' } } },
+  { path: '/backups', name: 'backups', component: () => import('../views/BackupsView.vue'), meta: { title: 'Respaldos' } },
   { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Configuración' } },
   { path: '/profile', name: 'profile', component: () => import('../views/ReaderProfileView.vue'), meta: { title: 'Perfil del lector' } },
 ];
