@@ -62,7 +62,7 @@ En **Configuración → Ubicación de la biblioteca** se puede elegir otra carpe
 - Imágenes y miniaturas de `uploads`.
 - Respaldos locales y el secreto de autenticación.
 
-La carpeta de destino debe estar vacía. Después de completar el traslado la aplicación se reinicia automáticamente. En AppData permanece únicamente un pequeño archivo de texto con la ruta seleccionada.
+La carpeta de destino debe estar vacía y fuera de la carpeta donde está instalado el programa, porque el desinstalador podría eliminar archivos que estuvieran dentro de ella. Después de completar el traslado la aplicación se reinicia automáticamente. En AppData permanece únicamente un pequeño archivo de texto con la ruta seleccionada.
 
 ## Servidor familiar LAN o NAS
 

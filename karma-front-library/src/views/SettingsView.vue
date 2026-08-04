@@ -97,7 +97,7 @@ async function useLocal() {
           <code>{{ storageInfo.dataDir }}</code>
           <small>{{ storageInfo.files.toLocaleString('es-PE') }} archivos · {{ formatBytes(storageInfo.bytes) }}{{ storageInfo.isCustom ? ' · Ubicación personalizada' : ' · Ubicación predeterminada' }}</small>
         </div>
-        <p class="settings-note"><strong>Al cambiarla:</strong> la base SQLite, las imágenes, los respaldos y la configuración privada se copiarán y verificarán antes de eliminarse de la ubicación anterior. La carpeta nueva debe estar vacía.</p>
+        <p class="settings-note"><strong>Al cambiarla:</strong> la base SQLite, las imágenes, los respaldos y la configuración privada se copiarán y verificarán antes de eliminarse de la ubicación anterior. Usa una carpeta dedicada y vacía, fuera de la carpeta donde instalaste el programa.</p>
         <button :disabled="busy || !storageInfo" @click="changeStorageDirectory"><FolderOpen />Cambiar carpeta y mover datos</button>
       </article>
       <article class="card settings-card settings-wide">

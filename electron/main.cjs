@@ -19,7 +19,9 @@ app.on('second-instance', () => {
 
 function connectionFile() { return path.join(app.getPath('userData'), 'connection.json'); }
 function storage() {
-  if (!storageManager) storageManager = createStorageManager(app.getPath('userData'));
+  if (!storageManager) storageManager = createStorageManager(app.getPath('userData'), {
+    forbiddenDirs: app.isPackaged ? [path.dirname(process.execPath)] : [],
+  });
   return storageManager;
 }
 function getDataDir() { return storage().getCurrentDir(); }

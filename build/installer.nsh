@@ -4,16 +4,18 @@
 
 !ifndef BUILD_UNINSTALLER
 Var KarmaDataDirectory
+Var KarmaCurrentDataDirectory
 Var KarmaDataDirectoryInput
 Var KarmaDataBrowseButton
 
 !macro customInit
-  StrCpy $KarmaDataDirectory "$APPDATA\Karma Library\data"
-  IfFileExists "$APPDATA\Karma Library\data-location.txt" 0 done_reading_location
-  FileOpen $0 "$APPDATA\Karma Library\data-location.txt" r
-  FileRead $0 $KarmaDataDirectory
+  StrCpy $KarmaCurrentDataDirectory "$APPDATA\karma-library-desktop\data"
+  IfFileExists "$APPDATA\karma-library-desktop\data-location.txt" 0 done_reading_location
+  FileOpen $0 "$APPDATA\karma-library-desktop\data-location.txt" r
+  FileRead $0 $KarmaCurrentDataDirectory
   FileClose $0
   done_reading_location:
+  StrCpy $KarmaDataDirectory $KarmaCurrentDataDirectory
 !macroend
 
 !macro customPageAfterChangeDir
@@ -59,6 +61,11 @@ Function KarmaDataPageLeave
     Abort
   ${EndIf}
 
+  StrCmp $KarmaDataDirectory $INSTDIR 0 not_install_directory
+  MessageBox MB_ICONEXCLAMATION|MB_OK "La biblioteca no puede guardarse dentro de la carpeta del programa, porque una desinstalación podría eliminar tus datos.$\r$\n$\r$\nCrea una carpeta dedicada, por ejemplo: F:\Karma Library Data"
+  Abort
+  not_install_directory:
+
   CreateDirectory "$KarmaDataDirectory"
   ClearErrors
   FileOpen $0 "$KarmaDataDirectory\.karma-write-test" w
@@ -68,11 +75,27 @@ Function KarmaDataPageLeave
   ${EndIf}
   FileClose $0
   Delete "$KarmaDataDirectory\.karma-write-test"
+
+  StrCmp $KarmaDataDirectory $KarmaCurrentDataDirectory directory_is_valid
+  FindFirst $0 $1 "$KarmaDataDirectory\*.*"
+  check_next_entry:
+    StrCmp $1 "" directory_is_empty
+    StrCmp $1 "." continue_checking
+    StrCmp $1 ".." continue_checking
+    FindClose $0
+    MessageBox MB_ICONEXCLAMATION|MB_OK "La carpeta elegida contiene archivos. Selecciona o crea una carpeta dedicada y vacía."
+    Abort
+  continue_checking:
+    FindNext $0 $1
+    Goto check_next_entry
+  directory_is_empty:
+    FindClose $0
+  directory_is_valid:
 FunctionEnd
 
 !macro customInstall
-  CreateDirectory "$APPDATA\Karma Library"
-  FileOpen $0 "$APPDATA\Karma Library\pending-data-location.txt" w
+  CreateDirectory "$APPDATA\karma-library-desktop"
+  FileOpen $0 "$APPDATA\karma-library-desktop\pending-data-location.txt" w
   FileWrite $0 "$KarmaDataDirectory"
   FileClose $0
 !macroend

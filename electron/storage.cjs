@@ -39,10 +39,11 @@ function inspectDirectory(directory) {
   return { files, bytes };
 }
 
-function createStorageManager(userDataDir) {
+function createStorageManager(userDataDir, options = {}) {
   const defaultDataDir = path.join(userDataDir, 'data');
   const locationFile = path.join(userDataDir, 'data-location.txt');
   const pendingFile = path.join(userDataDir, 'pending-data-location.txt');
+  const forbiddenDirs = (options.forbiddenDirs || []).map((directory) => path.resolve(directory));
 
   function normalizeTarget(value) {
     const target = String(value || '').trim();
@@ -50,6 +51,9 @@ function createStorageManager(userDataDir) {
     const resolved = path.resolve(target);
     if (samePath(resolved, path.parse(resolved).root)) throw new Error('Selecciona una carpeta dentro de la unidad, no la raíz completa.');
     if (samePath(resolved, userDataDir)) throw new Error('Selecciona una carpeta distinta de AppData.');
+    if (forbiddenDirs.some((directory) => samePath(resolved, directory) || isInside(resolved, directory))) {
+      throw new Error('No guardes la biblioteca dentro de la carpeta donde está instalado el programa. Una desinstalación podría eliminar tus datos.');
+    }
     return resolved;
   }
 

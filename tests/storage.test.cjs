@@ -57,3 +57,13 @@ test('requires an empty destination even for a new library', () => {
     assert.equal(readFileSync(path.join(target, 'personal.txt'), 'utf8'), 'do not mix');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('rejects the application installation directory and its children', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'karma-storage-install-'));
+  try {
+    const installDir = path.join(root, 'Programs', 'Karma Library');
+    const manager = createStorageManager(path.join(root, 'AppData'), { forbiddenDirs: [installDir] });
+    assert.throws(() => manager.migrate(installDir), /carpeta donde está instalado/);
+    assert.throws(() => manager.migrate(path.join(installDir, 'data')), /carpeta donde está instalado/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
