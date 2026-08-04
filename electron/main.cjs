@@ -44,6 +44,7 @@ function runtimePaths() {
     prismaClient: path.join(process.resourcesPath, 'server.asar', 'modules', '@prisma', 'client', 'index.js'),
     modulePath: path.join(process.resourcesPath, 'server.asar', 'modules'),
     blankDatabase: path.join(process.resourcesPath, 'server.asar', 'blank.sqlite'),
+    brandLogo: path.join(process.resourcesPath, 'brand', 'logo-mark.png'),
     web: path.join(process.resourcesPath, 'web'),
   };
   const root = path.join(__dirname, '..');
@@ -54,6 +55,7 @@ function runtimePaths() {
     prismaClient: path.join(root, 'karma-api-library', 'node_modules', '@prisma', 'client', 'index.js'),
     modulePath: path.join(root, 'karma-api-library', 'node_modules'),
     blankDatabase: path.join(root, '.runtime', 'server', 'blank.sqlite'),
+    brandLogo: path.join(root, 'build', 'logo-splash.png'),
     web: path.join(root, 'karma-front-library', 'dist'),
   };
 }
@@ -138,11 +140,13 @@ async function waitForServer(url) {
   throw new Error('El servidor local no respondió a tiempo.');
 }
 async function createWindow() {
-  const window = new BrowserWindow({ width: 1440, height: 900, minWidth: 1080, minHeight: 680, backgroundColor: '#090b12', show: true, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false } });
+  const paths = runtimePaths();
+  const window = new BrowserWindow({ width: 1440, height: 900, minWidth: 1080, minHeight: 680, backgroundColor: '#090b12', icon: paths.brandLogo, show: true, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false } });
   mainWindow = window;
   window.on('closed', () => { mainWindow = undefined; });
   window.setMenuBarVisibility(false);
-  const splash = encodeURIComponent(`<!doctype html><meta charset="utf-8"><style>html,body{height:100%;margin:0;background:#090b12;color:#fff;font-family:Segoe UI,sans-serif}body{display:grid;place-items:center}.box{text-align:center}.mark{width:76px;height:76px;margin:auto;border-radius:22px;background:linear-gradient(135deg,#9f6bff,#5b21b6);display:grid;place-items:center;font-size:34px;font-weight:800;box-shadow:0 18px 55px #7c3aed55}.name{margin:22px 0 8px;font-size:25px;font-weight:750;letter-spacing:.12em}.status{color:#9ca3af}.loader{width:180px;height:3px;margin:24px auto;background:#202434;overflow:hidden;border-radius:9px}.loader:after{content:'';display:block;width:45%;height:100%;background:#9f6bff;animation:move 1s infinite ease-in-out}@keyframes move{from{transform:translateX(-110%)}to{transform:translateX(330%)}}</style><div class="box"><div class="mark">K</div><div class="name">KARMA LIBRARY</div><div class="status">Preparando tu biblioteca…</div><div class="loader"></div></div>`);
+  const logo = `data:image/png;base64,${readFileSync(paths.brandLogo).toString('base64')}`;
+  const splash = encodeURIComponent(`<!doctype html><meta charset="utf-8"><style>html,body{height:100%;margin:0;background:radial-gradient(circle at 50% 38%,#211238 0,#090b12 43%,#07080d 100%);color:#fff;font-family:Segoe UI,sans-serif}body{display:grid;place-items:center}.box{text-align:center}.mark{width:112px;height:112px;margin:auto;border:1px solid #a855f766;border-radius:30px;object-fit:cover;box-shadow:0 22px 70px #7c3aed77}.name{margin:24px 0 8px;font-size:25px;font-weight:750;letter-spacing:.12em}.status{color:#aaa4b7}.loader{width:190px;height:3px;margin:24px auto;background:#242032;overflow:hidden;border-radius:9px}.loader:after{content:'';display:block;width:45%;height:100%;background:linear-gradient(90deg,#7c3aed,#c084fc);animation:move 1s infinite ease-in-out}@keyframes move{from{transform:translateX(-110%)}to{transform:translateX(330%)}}</style><div class="box"><img class="mark" src="${logo}" alt="Karma Library"><div class="name">KARMA LIBRARY</div><div class="status">Preparando tu biblioteca…</div><div class="loader"></div></div>`);
   await window.loadURL(`data:text/html;charset=utf-8,${splash}`);
   await applyPendingStorageLocation();
   const connection = getConnection();

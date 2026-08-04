@@ -1,6 +1,6 @@
 {
   "name": "karma-library-desktop",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "description": "Biblioteca personal offline y servidor familiar LAN",
   "author": "Karma Corp",
@@ -31,10 +31,11 @@
     "files": ["electron/**/*", "package.json"],
     "extraResources": [
       { "from": ".runtime/package", "to": "." },
+      { "from": "build/logo-splash.png", "to": "brand/logo-mark.png" },
       { "from": "karma-front-library/dist", "to": "web" }
     ],
     "win": { "target": ["nsis", "zip"], "artifactName": "${productName}-Portable-${version}-${arch}.${ext}", "icon": "karma-front-library/src/assets/brand/logo-mark.png" },
-    "nsis": { "artifactName": "${productName}-Setup-${version}-${arch}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "include": "build/installer.nsh" },
+    "nsis": { "artifactName": "${productName}-Setup-${version}-${arch}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "include": "build/installer.nsh", "installerHeader": "build/installerHeader.bmp", "installerSidebar": "build/installerSidebar.bmp", "uninstallerSidebar": "build/uninstallerSidebar.bmp" },
     "compression": "normal"
   }
 }

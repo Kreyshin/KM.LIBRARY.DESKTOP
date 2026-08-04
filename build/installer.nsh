@@ -31,16 +31,28 @@ Function KarmaDataPageCreate
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 0 100% 28u "Puedes elegir otra unidad para evitar llenar el disco C. En futuras actualizaciones se conservará esta ubicación."
+  ${NSD_CreateLabel} 0 0 100% 15u "KARMA LIBRARY"
   Pop $0
-  ${NSD_CreateLabel} 0 38u 100% 12u "Carpeta de datos:"
+  SetCtlColors $0 6D28D9 transparent
+  CreateFont $1 "Segoe UI" 12 700
+  SendMessage $0 ${WM_SETFONT} $1 1
+
+  ${NSD_CreateLabel} 0 19u 100% 20u "Tu biblioteca puede vivir en otra unidad para mantener libre el disco del sistema."
   Pop $0
-  ${NSD_CreateDirRequest} 0 54u 78% 13u "$KarmaDataDirectory"
+
+  ${NSD_CreateGroupBox} 0 43u 100% 51u "Ubicación de tus datos"
+  Pop $0
+  ${NSD_CreateLabel} 10u 56u 90% 11u "Base SQLite, imágenes, miniaturas y respaldos"
+  Pop $0
+  ${NSD_CreateDirRequest} 10u 70u 67% 13u "$KarmaDataDirectory"
   Pop $KarmaDataDirectoryInput
-  ${NSD_CreateBrowseButton} 80% 54u 20% 13u "Examinar..."
+  ${NSD_CreateBrowseButton} 79% 70u 19% 13u "Elegir..."
   Pop $KarmaDataBrowseButton
   ${NSD_OnClick} $KarmaDataBrowseButton KarmaDataBrowse
-  ${NSD_CreateLabel} 0 78u 100% 30u "Si ya existe contenido, Karma Library moverá y verificará la base SQLite, las imágenes y los respaldos al abrirse. La carpeta nueva debe estar vacía."
+
+  ${NSD_CreateGroupBox} 0 101u 100% 42u "Migración segura"
+  Pop $0
+  ${NSD_CreateLabel} 10u 115u 90% 20u "Si ya existe contenido, se copiará y verificará antes de eliminar la ubicación anterior. Usa una carpeta dedicada y vacía."
   Pop $0
 
   nsDialogs::Show

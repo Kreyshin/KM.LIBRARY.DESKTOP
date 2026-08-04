@@ -68,6 +68,8 @@ La carpeta de destino debe estar vacía y fuera de la carpeta donde está instal
 
 El desinstalador muestra una pantalla de Karma Library con dos opciones. **Conservar mi biblioteca** mantiene los datos para una futura reinstalación y está seleccionada por defecto. **Eliminar completamente** borra la base de datos, imágenes, respaldos y configuración únicamente después de una segunda confirmación.
 
+El instalador y desinstalador utilizan los colores y recursos visuales purple de Karma Library. La pantalla inicial de la aplicación reutiliza el mismo logo oficial empleado por el acceso directo.
+
 ## Servidor familiar LAN o NAS
 
 En una PC/NAS con Docker:
