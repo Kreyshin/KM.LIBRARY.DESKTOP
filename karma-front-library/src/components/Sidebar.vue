@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import {
-  Home, LibraryBig, LayoutGrid, Compass, BookOpenCheck,
-  BarChart3, Users, Tag, Heart, Settings, UserRound,
+  Home, LibraryBig, LayoutGrid, BookOpenCheck,
+  BarChart3, Users, Settings, UserRound,
 } from 'lucide-vue-next';
 import logoMark from '../assets/brand/logo-mark.png';
 
@@ -12,12 +12,9 @@ const items = [
   { to: '/', label: 'Inicio', icon: Home },
   { to: '/library', label: 'Librero', icon: LibraryBig },
   { to: '/shelves', label: 'Estantería', icon: LayoutGrid },
-  { to: '/discover', label: 'Descubrir', icon: Compass },
   { to: '/reading-log', label: 'Registro de lectura', icon: BookOpenCheck },
   { to: '/statistics', label: 'Estadísticas', icon: BarChart3 },
   { to: '/authors', label: 'Autores', icon: Users },
-  { to: '/tags', label: 'Etiquetas', icon: Tag },
-  { to: '/favorites', label: 'Favoritos', icon: Heart },
   { to: '/profile', label: 'Mi perfil', icon: UserRound },
   { to: '/settings', label: 'Configuración', icon: Settings },
 ];

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { LibraryBig, Plus, RotateCcw, Search, SearchX, SlidersHorizontal, Sparkles } from 'lucide-vue-next';
+import { Heart, LibraryBig, Plus, RotateCcw, Search, SearchX, SlidersHorizontal, Sparkles } from 'lucide-vue-next';
 import { useObrasStore } from '../stores/obras';
 import { type FormatType, type Obra, type ReadingStatus } from '../api/client';
 import { createCollectionFilters, hasActiveCollectionFilters, matchesCollectionFilters } from '../composables/collectionFilters';
@@ -12,12 +12,12 @@ const route = useRoute();
 const router = useRouter();
 const store = useObrasStore();
 const openWorkModal = inject<(obra: Obra | null) => void>('openWorkModal');
-const onlyFavorites = computed(() => route.path === '/favorites');
 const filters = ref(createCollectionFilters({
   query: String(route.query.q || ''),
   format: (route.query.tipo as FormatType) || 'ALL',
   status: (route.query.status as ReadingStatus) || 'ALL',
-  favoritesOnly: route.path === '/favorites',
+  author: String(route.query.author || ''),
+  favoritesOnly: route.query.favorite === '1',
 }));
 const sortBy = ref<'recent' | 'title' | 'rating'>('recent');
 const page = ref(1);
@@ -29,6 +29,8 @@ watch(() => route.query, (query) => {
   filters.value.query = String(query.q || '');
   filters.value.format = (query.tipo as FormatType) || 'ALL';
   filters.value.status = (query.status as ReadingStatus) || 'ALL';
+  filters.value.author = String(query.author || '');
+  filters.value.favoritesOnly = query.favorite === '1';
 }, { deep: true });
 
 watch(filters, (value) => {
@@ -36,6 +38,8 @@ watch(filters, (value) => {
   if (value.query) query.q = value.query;
   if (value.format !== 'ALL') query.tipo = value.format;
   if (value.status !== 'ALL') query.status = value.status;
+  if (value.author) query.author = value.author;
+  if (value.favoritesOnly) query.favorite = '1';
   router.replace({ query });
   page.value = 1;
 }, { deep: true });
@@ -53,7 +57,7 @@ const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / 
 const activeFilters = computed(() => hasActiveCollectionFilters(filters.value));
 
 function clearFilters() {
-  filters.value = createCollectionFilters({ favoritesOnly: onlyFavorites.value });
+  filters.value = createCollectionFilters();
 }
 </script>
 
@@ -62,7 +66,7 @@ function clearFilters() {
     <header class="library-page__header">
       <div>
         <span class="page-eyebrow">Tu colección</span>
-        <h1 class="section-title">{{ onlyFavorites ? 'Favoritos' : 'Librero' }}</h1>
+        <h1 class="section-title">Librero</h1>
         <p class="section-sub">Encuentra cualquier obra por formato, demografía, género, editorial o estado.</p>
       </div>
       <div class="library-page__summary"><strong>{{ filtered.length }}</strong><span>de {{ store.obras.value.length }} obras</span></div>
@@ -84,6 +88,7 @@ function clearFilters() {
             <Search />
             <input v-model="filters.query" type="search" aria-label="Buscar en la colección" placeholder="Buscar título, autor, editorial o etiqueta…" />
           </label>
+          <button type="button" class="favorite-filter" :class="{ active: filters.favoritesOnly }" :aria-pressed="filters.favoritesOnly" @click="filters.favoritesOnly = !filters.favoritesOnly"><Heart :fill="filters.favoritesOnly ? 'currentColor' : 'none'" /> Favoritos</button>
           <select v-model="sortBy" class="filter-select library-sort" aria-label="Ordenar resultados">
             <option value="recent">Añadido recientemente</option>
             <option value="title">Título</option>

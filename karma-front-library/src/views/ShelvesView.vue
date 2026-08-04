@@ -4,6 +4,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Heart,
   LibraryBig,
   LockKeyhole,
   ShoppingBag,
@@ -316,6 +317,8 @@ function clearCollectionFilters() { filters.value = createCollectionFilters(); }
           Lomos
         </button>
       </div>
+
+      <button type="button" class="favorite-filter" :class="{ active: filters.favoritesOnly }" :aria-pressed="filters.favoritesOnly" @click="filters.favoritesOnly = !filters.favoritesOnly"><Heart :fill="filters.favoritesOnly ? 'currentColor' : 'none'" /> Favoritos</button>
 
       <span class="toolbar-note"><strong>{{ shelfFilter.name }}</strong>{{ visibleWorkShelves.length }} obras · {{ visibleVolumes }} tomos</span>
     </div>
