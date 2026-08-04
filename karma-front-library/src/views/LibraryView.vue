@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { LibraryBig, Search, SearchX, SlidersHorizontal, Sparkles } from 'lucide-vue-next';
+import { LibraryBig, Plus, RotateCcw, Search, SearchX, SlidersHorizontal, Sparkles } from 'lucide-vue-next';
 import { useObrasStore } from '../stores/obras';
 import { type FormatType, type Obra, type ReadingStatus } from '../api/client';
 import { createCollectionFilters, hasActiveCollectionFilters, matchesCollectionFilters } from '../composables/collectionFilters';
@@ -107,8 +107,8 @@ function clearFilters() {
           <div class="empty-state__art"><LibraryBig v-if="!store.obras.value.length" /><SearchX v-else /><Sparkles /></div>
           <h2>{{ store.obras.value.length ? 'No hay coincidencias' : 'Tu próxima historia empieza aquí' }}</h2>
           <p>{{ store.obras.value.length ? 'Ajusta los filtros para volver a explorar tu colección.' : 'Agrega tu primera obra y comienza a construir una biblioteca hecha a tu medida.' }}</p>
-          <button v-if="store.obras.value.length" type="button" class="secondary-button" @click="clearFilters">Limpiar filtros</button>
-          <button v-else type="button" class="primary-button" @click="openWorkModal?.(null)">Agregar primera obra</button>
+          <button v-if="store.obras.value.length" type="button" class="empty-state__button empty-state__button--secondary" @click="clearFilters"><RotateCcw /> Limpiar filtros</button>
+          <button v-else type="button" class="empty-state__button empty-state__button--primary" @click="openWorkModal?.(null)"><Plus /> Agregar primera obra</button>
         </section>
 
         <nav v-if="totalPages > 1" class="pagination" aria-label="Páginas de resultados">
