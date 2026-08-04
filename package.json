@@ -1,6 +1,6 @@
 {
   "name": "karma-library-desktop",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": true,
   "description": "Biblioteca personal offline y servidor familiar LAN",
   "author": "Karma Corp",
@@ -13,6 +13,7 @@
     "build:web": "npm --prefix karma-front-library run build",
     "build": "npm run db:generate && npm run build:api && npm run build:web",
     "prepare:runtime": "node scripts/prepare-runtime.cjs",
+    "test:storage": "node --test tests/storage.test.cjs",
     "desktop": "npm run build && electron .",
     "dist:windows": "npm run build && npm run prepare:runtime && electron-builder --win nsis zip",
     "server:lan": "npm run build && node karma-api-library/dist/main.js"
@@ -33,7 +34,7 @@
       { "from": "karma-front-library/dist", "to": "web" }
     ],
     "win": { "target": ["nsis", "zip"], "artifactName": "${productName}-Portable-${version}-${arch}.${ext}", "icon": "karma-front-library/src/assets/brand/logo-mark.png" },
-    "nsis": { "artifactName": "${productName}-Setup-${version}-${arch}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true },
+    "nsis": { "artifactName": "${productName}-Setup-${version}-${arch}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "include": "build/installer.nsh" },
     "compression": "normal"
   }
 }

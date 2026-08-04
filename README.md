@@ -23,7 +23,7 @@ npm.cmd run build
 npm.cmd run desktop
 ```
 
-En desarrollo, los datos quedan por defecto en `karma-api-library/data`. La aplicación Electron instalada utiliza `%APPDATA%\Karma Library\data`.
+En desarrollo, los datos quedan por defecto en `karma-api-library/data`. Durante la instalación de Electron se puede elegir la carpeta de la biblioteca; si se conserva el valor predeterminado utiliza `%APPDATA%\Karma Library\data`.
 
 ## Generar instalador y versión portátil
 
@@ -53,6 +53,16 @@ Al abrir la aplicación:
 4. Los secretos y datos se crean en la carpeta personal del usuario.
 
 No se requiere Docker, PostgreSQL ni conexión a Internet.
+
+### Cambiar la carpeta de datos
+
+En **Configuración → Ubicación de la biblioteca** se puede elegir otra carpeta o unidad. Karma Library cierra temporalmente su servidor local, copia y verifica todos los archivos, activa la nueva ubicación y solo entonces elimina los datos anteriores. La operación incluye:
+
+- `library.sqlite` y sus migraciones.
+- Imágenes y miniaturas de `uploads`.
+- Respaldos locales y el secreto de autenticación.
+
+La carpeta de destino debe estar vacía. Después de completar el traslado la aplicación se reinicia automáticamente. En AppData permanece únicamente un pequeño archivo de texto con la ruta seleccionada.
 
 ## Servidor familiar LAN o NAS
 
