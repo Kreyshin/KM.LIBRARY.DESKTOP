@@ -7,6 +7,7 @@ uploads/
 !.env.example
 data/
 release/
+.runtime/
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

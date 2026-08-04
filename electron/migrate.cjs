@@ -1,9 +1,12 @@
 const { existsSync, readFileSync, readdirSync } = require('fs');
+const Module = require('module');
 const path = require('path');
 
 async function main() {
   const [clientPath, migrationsDir] = process.argv.slice(2);
   if (!clientPath || !migrationsDir) throw new Error('Faltan las rutas del cliente Prisma o las migraciones.');
+  process.env.NODE_PATH = path.resolve(path.dirname(clientPath), '..', '..');
+  Module._initPaths();
   const { PrismaClient } = require(clientPath);
   const prisma = new PrismaClient();
   try {

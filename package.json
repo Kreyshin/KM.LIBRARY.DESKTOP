@@ -1,6 +1,6 @@
 {
   "name": "karma-library-desktop",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "description": "Biblioteca personal offline y servidor familiar LAN",
   "author": "Karma Corp",
@@ -12,11 +12,13 @@
     "build:api": "npm --prefix karma-api-library run build",
     "build:web": "npm --prefix karma-front-library run build",
     "build": "npm run db:generate && npm run build:api && npm run build:web",
+    "prepare:runtime": "node scripts/prepare-runtime.cjs",
     "desktop": "npm run build && electron .",
-    "dist:windows": "npm run build && electron-builder --win nsis portable",
+    "dist:windows": "npm run build && npm run prepare:runtime && electron-builder --win nsis zip",
     "server:lan": "npm run build && node karma-api-library/dist/main.js"
   },
   "devDependencies": {
+    "@electron/asar": "^3.4.1",
     "electron": "^37.2.6",
     "electron-builder": "^26.0.12"
   },
@@ -27,14 +29,11 @@
     "asar": true,
     "files": ["electron/**/*", "package.json"],
     "extraResources": [
-      { "from": "karma-api-library/dist", "to": "server/dist" },
-      { "from": "karma-api-library/node_modules", "to": "server/node_modules" },
-      { "from": "karma-api-library/prisma", "to": "server/prisma" },
-      { "from": "electron/migrate.cjs", "to": "server/migrate.cjs" },
+      { "from": ".runtime/package", "to": "." },
       { "from": "karma-front-library/dist", "to": "web" }
     ],
-    "win": { "target": ["nsis", "portable"], "icon": "karma-front-library/src/assets/brand/logo-mark.png" },
+    "win": { "target": ["nsis", "zip"], "artifactName": "${productName}-Portable-${version}-${arch}.${ext}", "icon": "karma-front-library/src/assets/brand/logo-mark.png" },
     "nsis": { "artifactName": "${productName}-Setup-${version}-${arch}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true },
-    "portable": { "artifactName": "${productName}-Portable-${version}-${arch}.${ext}" }
+    "compression": "normal"
   }
 }

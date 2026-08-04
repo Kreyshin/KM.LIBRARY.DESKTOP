@@ -25,7 +25,7 @@ npm.cmd run desktop
 
 En desarrollo, los datos quedan por defecto en `karma-api-library/data`. La aplicación Electron instalada utiliza `%APPDATA%\Karma Library\data`.
 
-## Generar instalador y ejecutable portátil
+## Generar instalador y versión portátil
 
 ```powershell
 npm.cmd run dist:windows
@@ -34,7 +34,12 @@ npm.cmd run dist:windows
 Los archivos se generan en `release/`:
 
 - Instalador NSIS `.exe`.
-- Ejecutable portátil `.exe`.
+- Versión portátil `.zip`.
+
+Para usar la versión portátil, selecciona **Extraer todo** en Windows y luego
+abre `Karma Library.exe` desde la carpeta extraída. No la ejecutes directamente
+desde la vista previa del ZIP. La primera apertura muestra inmediatamente una
+pantalla de preparación mientras inicia el servidor local.
 
 El instalador sin firma puede mostrar una advertencia de Windows SmartScreen. Para distribución pública conviene adquirir un certificado de firma de código.
 
@@ -42,8 +47,8 @@ El instalador sin firma puede mostrar una advertencia de Windows SmartScreen. Pa
 
 Al abrir la aplicación:
 
-1. Electron crea `library.sqlite` si no existe.
-2. Prisma aplica las migraciones pendientes.
+1. Electron copia una base `library.sqlite` ya inicializada si no existe.
+2. Prisma solo aplica migraciones cuando la versión de la base cambió.
 3. NestJS escucha únicamente en `127.0.0.1:3344`.
 4. Los secretos y datos se crean en la carpeta personal del usuario.
 
