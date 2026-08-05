@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { CheckCircle2, DatabaseBackup, Download, RefreshCw, ShieldCheck, Trash2, Upload, XCircle } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle2, DatabaseBackup, Download, RefreshCw, ShieldCheck, Trash2, Upload, XCircle } from 'lucide-vue-next';
 import { api, type BackupItem, type BackupSettings, type BackupVerifyResult } from '../api/client';
 import { notifyError, notifySuccess } from '../services/notifications';
+import { useAuthStore } from '../stores/auth';
+
+const auth = useAuthStore();
+
+type RestoreStage = 'restoring' | 'waiting' | 'ready' | 'error';
+const restoreOverlay = ref<{ stage: RestoreStage; message: string } | null>(null);
 
 const INTERVAL_OPTIONS = [
   { value: 6, label: 'Cada 6 horas' },
@@ -100,16 +106,44 @@ async function verifyBackup(item: BackupItem) {
   }
 }
 
+async function waitForServerBack() {
+  const deadline = Date.now() + 45000;
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch('/api/system/status');
+      if (response.ok) return true;
+    } catch { /* el servidor sigue reiniciando */ }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return false;
+}
+
+async function performRestore(run: () => Promise<{ restored: boolean; restarting: boolean }>) {
+  restoreOverlay.value = { stage: 'restoring', message: 'Aplicando el respaldo…' };
+  try {
+    await run();
+  } catch (error: any) {
+    restoreOverlay.value = null;
+    notifyError('No se pudo restaurar', error.message);
+    return;
+  }
+  restoreOverlay.value = { stage: 'waiting', message: 'Reiniciando el servidor local…' };
+  const back = await waitForServerBack();
+  if (!back) {
+    restoreOverlay.value = { stage: 'error', message: 'No se pudo confirmar que el servidor volvió a iniciar. Cierra y vuelve a abrir Karma Library.' };
+    return;
+  }
+  restoreOverlay.value = { stage: 'ready', message: 'Listo. Redirigiendo al inicio de sesión…' };
+  auth.clearSession();
+  setTimeout(() => { window.location.href = '/login'; }, 700);
+}
+
 async function restoreExisting(item: BackupItem) {
   if (!confirm(`La restauración reemplazará todos los datos locales actuales con el respaldo "${item.name}". ¿Deseas continuar?`)) return;
   pendingAction.value = item.name;
-  try {
-    await api.restoreBackupByName(item.name);
-    notifySuccess('Respaldo restaurado', 'Karma Library se reiniciará con los datos recuperados.');
-  } catch (error: any) {
-    notifyError('No se pudo restaurar', error.message);
-    pendingAction.value = '';
-  }
+  await performRestore(() => api.restoreBackupByName(item.name));
+  pendingAction.value = '';
 }
 
 async function removeBackup(item: BackupItem) {
@@ -123,20 +157,33 @@ async function removeBackup(item: BackupItem) {
 }
 
 async function restoreFromFile(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file || !confirm('La restauración reemplazará todos los datos locales actuales. ¿Deseas continuar?')) return;
-  busy.value = true;
-  try {
-    await api.restoreBackup(file);
-    notifySuccess('Respaldo restaurado', 'Karma Library se reiniciará con los datos recuperados.');
-  } catch (error: any) {
-    notifyError('No se pudo restaurar', error.message);
-    busy.value = false;
-  }
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !confirm('La restauración reemplazará todos los datos locales actuales. ¿Deseas continuar?')) { input.value = ''; return; }
+  await performRestore(() => api.restoreBackup(file));
+  input.value = '';
+}
+
+function retryWaitForServer() {
+  restoreOverlay.value = { stage: 'waiting', message: 'Reiniciando el servidor local…' };
+  waitForServerBack().then((back) => {
+    if (!back) { restoreOverlay.value = { stage: 'error', message: 'Sigue sin responder. Cierra y vuelve a abrir Karma Library.' }; return; }
+    restoreOverlay.value = { stage: 'ready', message: 'Listo. Redirigiendo al inicio de sesión…' };
+    auth.clearSession();
+    setTimeout(() => { window.location.href = '/login'; }, 700);
+  });
 }
 </script>
 
 <template>
+  <div v-if="restoreOverlay" class="restore-overlay">
+    <div class="restore-box">
+      <AlertTriangle v-if="restoreOverlay.stage === 'error'" class="restore-error-icon" />
+      <div v-else class="restore-spinner-bar"><span></span></div>
+      <p>{{ restoreOverlay.message }}</p>
+      <button v-if="restoreOverlay.stage === 'error'" @click="retryWaitForServer">Reintentar</button>
+    </div>
+  </div>
   <div class="backups-page">
     <header>
       <span class="eyebrow">RESPALDOS</span>
@@ -242,4 +289,13 @@ async function restoreFromFile(event: Event) {
 @media (max-width: 800px) {
   .backups-grid { grid-template-columns: 1fr; }
 }
+.restore-overlay { position: fixed; inset: 0; background: rgba(4, 6, 13, .92); backdrop-filter: blur(4px); z-index: 1000; display: grid; place-items: center; }
+.restore-box { display: grid; gap: 18px; justify-items: center; text-align: center; max-width: 360px; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.restore-box p { margin: 0; color: var(--text); }
+.restore-spinner-bar { width: 220px; height: 4px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.restore-spinner-bar span { display: block; width: 45%; height: 100%; background: var(--accent-gradient); animation: restore-move 1s infinite ease-in-out; }
+@keyframes restore-move { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
+.restore-error-icon { color: #fca5a5; width: 36px; height: 36px; }
+.restore-box button { border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: var(--radius-sm); padding: 10px 16px; cursor: pointer; }
+.restore-box button:hover { border-color: var(--accent); }
 </style>
