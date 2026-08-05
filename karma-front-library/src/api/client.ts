@@ -183,6 +183,14 @@ export interface Shelf { id: string; name: string; description: string | null; c
 export interface ShelvesResponse { custom: Shelf[]; smart: Shelf[]; }
 export interface Genre { id: string; name: string; slug: string; isStandard: boolean; createdAt: string; }
 
+export type DigitalMediaType = 'EPUB' | 'PDF' | 'CBZ' | 'IMAGE_FOLDER';
+export interface DigitalFile {
+  id: string; label: string | null; originalName: string; storedPath: string;
+  mediaType: DigitalMediaType; format: string; sizeBytes: number; pageCount: number | null;
+  manifestJson: string; createdAt: string; volumeId: string;
+}
+export interface DigitalProgress { currentPage: number; totalPages: number | null; percent: number; locator: string | null; }
+
 export interface BackupItem { name: string; sizeBytes: number; createdAt: string; }
 export interface BackupSettings { autoEnabled: boolean; intervalHours: number; retention: number; lastRunAt: string | null; }
 export interface BackupsResponse { items: BackupItem[]; settings: BackupSettings; }
@@ -343,6 +351,19 @@ export const api = {
   addShelfItem: (id: string, obraId: string) => request<Shelf>(`/shelves/${id}/items`, { method: 'POST', body: JSON.stringify({ obraId }) }),
   removeShelfItem: (id: string, obraId: string) => request<Shelf>(`/shelves/${id}/items/${obraId}`, { method: 'DELETE' }),
   reorderShelfItems: (id: string, obraIds: string[]) => request<Shelf>(`/shelves/${id}/reorder`, { method: 'PATCH', body: JSON.stringify({ obraIds }) }),
+  listDigitalFiles: (obraId: string, number: number) => request<DigitalFile[]>(`/obras/${obraId}/volumes/${number}/digital-files`),
+  uploadDigitalFiles: (obraId: string, number: number, files: File[], label?: string) => {
+    const form = new FormData();
+    files.forEach((file) => form.append('files', file));
+    if (label) form.append('label', label);
+    return request<DigitalFile>(`/obras/${obraId}/volumes/${number}/digital-files`, { method: 'POST', body: form });
+  },
+  removeDigitalFile: (obraId: string, number: number, fileId: string) =>
+    request<{ deleted: boolean }>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}`, { method: 'DELETE' }),
+  getDigitalProgress: (obraId: string, number: number, fileId: string) =>
+    request<DigitalProgress>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/progress`),
+  saveDigitalProgress: (obraId: string, number: number, fileId: string, data: Partial<DigitalProgress>) =>
+    request<DigitalProgress>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/progress`, { method: 'PUT', body: JSON.stringify(data) }),
   createBackup: () => request<{ name: string; downloadUrl: string }>('/system/backups', { method: 'POST' }),
   listBackups: () => request<BackupsResponse>('/system/backups'),
   updateBackupSettings: (data: Partial<BackupSettings>) => request<BackupSettings>('/system/backups/settings', { method: 'PUT', body: JSON.stringify(data) }),

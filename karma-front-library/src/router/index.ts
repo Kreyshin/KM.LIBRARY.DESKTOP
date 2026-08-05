@@ -13,6 +13,7 @@ const routes = [
   { path: '/tags', redirect: '/library' },
   { path: '/favorites', redirect: { path: '/library', query: { favorite: '1' } } },
   { path: '/backups', name: 'backups', component: () => import('../views/BackupsView.vue'), meta: { title: 'Respaldos' } },
+  { path: '/reader/:obraId/:volumeNumber/:fileId', name: 'reader', component: () => import('../views/ReaderView.vue'), meta: { title: 'Lector', standalone: true } },
   { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Configuración' } },
   { path: '/profile', name: 'profile', component: () => import('../views/ReaderProfileView.vue'), meta: { title: 'Perfil del lector' } },
 ];

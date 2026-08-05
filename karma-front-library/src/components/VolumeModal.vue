@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   BookMarked,
   BookOpen,
+  BookOpenText,
   Check,
   Crown,
+  FileUp,
   ImagePlus,
   Images,
   Layers3,
@@ -20,6 +23,7 @@ import {
   LANGUAGES,
   VOLUME_OWNERSHIP,
   VOLUME_STATUSES,
+  type DigitalFile,
   type Obra,
   type Volume,
   type VolumeCoverVariant,
@@ -40,7 +44,14 @@ const emit = defineEmits<{
 }>();
 
 const store = useObrasStore();
+const router = useRouter();
 const local = ref<Volume>({ ...props.volume });
+
+const digitalFiles = ref<DigitalFile[]>([]);
+const loadingDigitalFiles = ref(false);
+const uploadingDigital = ref(false);
+const digitalLabelDraft = ref('');
+const digitalFileInput = ref<HTMLInputElement | null>(null);
 
 const f = ref({
   title: '',
@@ -130,9 +141,86 @@ function loadVolume(volume: Volume) {
   };
 
   error.value = '';
+  digitalLabelDraft.value = '';
+  void loadDigitalFiles();
 }
 
 watch(() => props.volume, loadVolume, { immediate: true });
+
+async function loadDigitalFiles() {
+  loadingDigitalFiles.value = true;
+  try {
+    digitalFiles.value = await api.listDigitalFiles(props.obra.id, props.volume.number);
+  } catch (cause: unknown) {
+    showOperationError(cause, 'No se pudieron cargar los archivos digitales.');
+  } finally {
+    loadingDigitalFiles.value = false;
+  }
+}
+
+function pickDigitalFiles() {
+  digitalFileInput.value?.click();
+}
+
+async function onDigitalFilesChosen(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = input.files ? Array.from(input.files) : [];
+  if (!files.length) return;
+
+  uploadingDigital.value = true;
+  error.value = '';
+
+  try {
+    await api.uploadDigitalFiles(props.obra.id, props.volume.number, files, digitalLabelDraft.value.trim() || undefined);
+    digitalLabelDraft.value = '';
+    await loadDigitalFiles();
+    notifySuccess('Archivo agregado', 'Ya puedes abrirlo desde este tomo.');
+  } catch (cause: unknown) {
+    showOperationError(cause, 'No se pudo subir el archivo.');
+  } finally {
+    uploadingDigital.value = false;
+    input.value = '';
+  }
+}
+
+async function removeDigitalFile(file: DigitalFile) {
+  const confirmed = await confirmAction({
+    title: `¿Eliminar “${file.label || file.originalName}”?`,
+    description: 'El archivo se eliminará permanentemente del disco.',
+    confirmLabel: 'Eliminar archivo',
+    danger: true,
+  });
+
+  if (!confirmed) return;
+
+  try {
+    await api.removeDigitalFile(props.obra.id, props.volume.number, file.id);
+    digitalFiles.value = digitalFiles.value.filter((item) => item.id !== file.id);
+    notifySuccess('Archivo eliminado');
+  } catch (cause: unknown) {
+    showOperationError(cause, 'No se pudo eliminar el archivo.');
+  }
+}
+
+function openReader(file: DigitalFile) {
+  router.push({
+    name: 'reader',
+    params: { obraId: props.obra.id, volumeNumber: String(props.volume.number), fileId: file.id },
+  });
+}
+
+function digitalMediaLabel(type: DigitalFile['mediaType']) {
+  return { EPUB: 'EPUB', PDF: 'PDF', CBZ: 'Cómic (CBZ)', IMAGE_FOLDER: 'Imágenes' }[type] || type;
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unit = units[0];
+  for (let index = 1; index < units.length && value >= 1024; index += 1) { value /= 1024; unit = units[index]; }
+  return `${value.toLocaleString('es-PE', { maximumFractionDigits: 1 })} ${unit}`;
+}
 
 const modalTitle = computed(() => f.value.title || `Tomo ${props.volume.number}`);
 const alternateCovers = computed(() => local.value.alternateCovers || []);
@@ -992,6 +1080,61 @@ function closeModal() {
                 </div>
               </div>
             </section>
+
+            <section class="form-section">
+              <div class="form-section__header">
+                <div>
+                  <span>05</span>
+                  <div>
+                    <h3>Archivos digitales</h3>
+                    <p>EPUB, PDF, CBZ o imágenes para leer dentro de la app.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="digital-upload-row">
+                <input
+                  v-model="digitalLabelDraft"
+                  type="text"
+                  maxlength="80"
+                  placeholder="Nombre visible (opcional, ej. Edición digital)"
+                  class="digital-label-input"
+                />
+                <button type="button" class="new-edition-button" :disabled="uploadingDigital" @click="pickDigitalFiles">
+                  <FileUp />
+                  {{ uploadingDigital ? 'Subiendo…' : 'Agregar archivo' }}
+                </button>
+              </div>
+              <input
+                ref="digitalFileInput"
+                type="file"
+                hidden
+                multiple
+                accept=".epub,.pdf,.cbz,.zip,image/*"
+                @change="onDigitalFilesChosen"
+              />
+              <p class="alternate-cover-form__help">
+                Un solo archivo EPUB, PDF o CBZ, o varias imágenes para armar una carpeta de páginas. Los CBR/RAR todavía no son compatibles: conviértelos a CBZ.
+              </p>
+
+              <p v-if="loadingDigitalFiles" class="digital-empty">Cargando archivos…</p>
+              <div v-else-if="!digitalFiles.length" class="digital-empty">
+                <BookOpenText />
+                <span>Este tomo todavía no tiene archivos digitales asociados.</span>
+              </div>
+              <ul v-else class="digital-files-list">
+                <li v-for="file in digitalFiles" :key="file.id" class="digital-file-row">
+                  <div class="digital-file-info">
+                    <strong>{{ file.label || file.originalName }}</strong>
+                    <span>{{ digitalMediaLabel(file.mediaType) }} · {{ formatFileSize(file.sizeBytes) }}<template v-if="file.pageCount"> · {{ file.pageCount }} páginas</template></span>
+                  </div>
+                  <div class="digital-file-actions">
+                    <button type="button" class="variant-action" @click="openReader(file)"><BookOpenText /> Leer</button>
+                    <button type="button" class="variant-action variant-action--danger" @click="removeDigitalFile(file)"><Trash2 /> Eliminar</button>
+                  </div>
+                </li>
+              </ul>
+            </section>
           </main>
         </div>
       </div>
@@ -1139,6 +1282,17 @@ function closeModal() {
 .cover-metadata-editor__actions{display:flex;gap:6px;margin-top:3px}
 .cover-variants__empty{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--text-faint);border:1px dashed rgba(255,255,255,.075);border-radius:9px;font-size:10.5px}
 .cover-variants__empty svg{width:16px;height:16px}
+.digital-upload-row{display:flex;gap:10px;margin-bottom:10px}
+.digital-label-input{flex:1;height:38px;padding:0 11px;color:var(--text);background:#080b12;border:1px solid rgba(255,255,255,.075);border-radius:8px;outline:none;font:12.5px inherit}
+.digital-label-input:focus{border-color:rgba(159,107,255,.72);box-shadow:0 0 0 3px rgba(159,107,255,.08)}
+.digital-empty{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;margin-top:12px;color:var(--text-faint);border:1px dashed rgba(255,255,255,.075);border-radius:9px;font-size:10.5px}
+.digital-empty svg{width:16px;height:16px}
+.digital-files-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.digital-file-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 13px;background:#080b12;border:1px solid rgba(255,255,255,.065);border-radius:9px}
+.digital-file-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.digital-file-info strong{overflow:hidden;color:var(--text);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
+.digital-file-info span{color:var(--text-faint);font-size:9.5px}
+.digital-file-actions{display:flex;gap:6px;flex-shrink:0}
 .work-modal__footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 26px;background:rgba(7,10,17,.97);border-top:1px solid rgba(255,255,255,.06)}
 .work-modal__actions{display:flex;align-items:center;gap:9px}
 .primary-button,.secondary-button,.danger-button,.link-button{min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 15px;border-radius:8px;font:700 12px inherit;cursor:pointer}

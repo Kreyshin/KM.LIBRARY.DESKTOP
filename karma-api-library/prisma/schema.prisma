@@ -38,6 +38,7 @@ model Profile {
   sessions           AuthSession[]
   readingSessions    ReadingSession[]
   shelves            Shelf[]
+  digitalProgress    DigitalProgress[]
 
   @@index([accountId, position])
   @@map("profile")
@@ -134,6 +135,7 @@ model Volume {
   obra            Obra                 @relation(fields: [obraId], references: [id], onDelete: Cascade)
   alternateCovers VolumeCoverVariant[]
   readingSessions ReadingSession[]
+  digitalFiles    DigitalFile[]
 
   @@unique([obraId, number])
   @@map("volume")
@@ -215,4 +217,40 @@ model ShelfItem {
   @@unique([shelfId, obraId])
   @@index([shelfId, position])
   @@map("shelf_item")
+}
+
+model DigitalFile {
+  id           String            @id @default(uuid())
+  label        String?
+  originalName String
+  storedPath   String
+  mediaType    String
+  format       String
+  sizeBytes    Int
+  pageCount    Int?
+  manifestJson String            @default("[]")
+  createdAt    DateTime          @default(now())
+  volumeId     String
+  volume       Volume            @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  progress     DigitalProgress[]
+
+  @@index([volumeId, createdAt])
+  @@map("digital_file")
+}
+
+model DigitalProgress {
+  id          String      @id @default(uuid())
+  currentPage Int         @default(1)
+  totalPages  Int?
+  percent     Float       @default(0)
+  locator     String?
+  updatedAt   DateTime    @updatedAt
+  readerId    String
+  fileId      String
+  reader      Profile     @relation(fields: [readerId], references: [id], onDelete: Cascade)
+  file        DigitalFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([readerId, fileId])
+  @@index([fileId])
+  @@map("digital_progress")
 }
