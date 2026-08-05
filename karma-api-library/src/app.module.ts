@@ -11,7 +11,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
-    ...(process.env.KARMA_STATIC_DIR ? [ServeStaticModule.forRoot({ rootPath: process.env.KARMA_STATIC_DIR, exclude: ['/api*', '/uploads*'] })] : []),
+    ...(process.env.KARMA_STATIC_DIR ? [ServeStaticModule.forRoot({ rootPath: process.env.KARMA_STATIC_DIR, exclude: ['/api/{*rest}', '/uploads/{*rest}'] })] : []),
     PrismaModule, ObrasModule, AuthModule, ReadersModule, ReadingModule, ShelvesModule, GenresModule, SystemModule,
   ],
 })
