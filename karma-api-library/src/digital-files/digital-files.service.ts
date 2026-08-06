@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { existsSync, mkdirSync, renameSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, renameSync, rmSync, statSync } from 'fs';
 import { extname, join } from 'path';
 import AdmZip = require('adm-zip');
 import { v4 as uuid } from 'uuid';
@@ -174,6 +174,47 @@ export class DigitalFilesService {
     return this.prisma.digitalFile.update({
       where: { id: file.id },
       data: { manifestJson: JSON.stringify(order), storedPath: order[0] },
+    });
+  }
+
+  async removePages(obraId: string, number: number, fileId: string, pagesToRemove: string[]) {
+    if (!pagesToRemove?.length) throw new BadRequestException('Selecciona al menos una página para eliminar.');
+    const file = await this.getFile(obraId, number, fileId);
+    if (file.mediaType !== 'IMAGE_FOLDER') throw new BadRequestException('Solo se pueden eliminar páginas de un archivo de imágenes.');
+
+    const manifest: string[] = JSON.parse(file.manifestJson || '[]');
+    const toRemove = new Set(pagesToRemove);
+    const remaining = manifest.filter((url) => !toRemove.has(url));
+    if (remaining.length === manifest.length) throw new BadRequestException('Ninguna de las páginas indicadas existe en este archivo.');
+    if (remaining.length === 0) throw new BadRequestException('No puedes eliminar todas las páginas. Elimina el archivo completo en su lugar.');
+
+    const dir = join(getUploadsDir(), obraId, 'digital', file.id);
+    let removedBytes = 0;
+    for (const url of manifest) {
+      if (!toRemove.has(url)) continue;
+      const pagePath = join(dir, url.split('/').pop() as string);
+      if (existsSync(pagePath)) {
+        removedBytes += statSync(pagePath).size;
+        rmSync(pagePath, { force: true });
+      }
+    }
+
+    return this.prisma.digitalFile.update({
+      where: { id: file.id },
+      data: {
+        manifestJson: JSON.stringify(remaining),
+        pageCount: remaining.length,
+        sizeBytes: Math.max(0, file.sizeBytes - removedBytes),
+        storedPath: remaining[0],
+      },
+    });
+  }
+
+  async updateLabel(obraId: string, number: number, fileId: string, label: string | null) {
+    const file = await this.getFile(obraId, number, fileId);
+    return this.prisma.digitalFile.update({
+      where: { id: file.id },
+      data: { label: label?.trim() || null },
     });
   }
 

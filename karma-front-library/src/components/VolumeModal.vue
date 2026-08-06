@@ -57,6 +57,8 @@ const uploadingDigital = ref(false);
 const digitalLabelDraft = ref('');
 const digitalFileInput = ref<HTMLInputElement | null>(null);
 const managingPagesFile = ref<DigitalFile | null>(null);
+const renamingFileId = ref<string | null>(null);
+const renameDraft = ref('');
 
 const f = ref({
   title: '',
@@ -215,6 +217,27 @@ function openReader(file: DigitalFile, overrideOnce = false) {
   const popout = overrideOnce ? !getReaderPopoutPreference() : getReaderPopoutPreference();
   if (popout) window.open(route.href, '_blank', 'noopener');
   else router.push(route);
+}
+
+function startRename(file: DigitalFile) {
+  renamingFileId.value = file.id;
+  renameDraft.value = file.label || '';
+}
+
+function cancelRename() {
+  renamingFileId.value = null;
+}
+
+async function saveRename(file: DigitalFile) {
+  try {
+    const updated = await api.updateDigitalFile(props.obra.id, props.volume.number, file.id, renameDraft.value.trim());
+    const index = digitalFiles.value.findIndex((item) => item.id === file.id);
+    if (index !== -1) digitalFiles.value[index] = updated;
+    renamingFileId.value = null;
+    notifySuccess('Nombre actualizado');
+  } catch (cause: unknown) {
+    showOperationError(cause, 'No se pudo cambiar el nombre.');
+  }
 }
 
 function onPagesUpdated(updated: DigitalFile) {
@@ -1139,8 +1162,15 @@ function closeModal() {
               <ul v-else class="digital-files-list">
                 <li v-for="file in digitalFiles" :key="file.id" class="digital-file-row">
                   <div class="digital-file-info">
-                    <strong>{{ file.label || file.originalName }}</strong>
-                    <span>{{ digitalMediaLabel(file.mediaType) }} · {{ formatFileSize(file.sizeBytes) }}<template v-if="file.pageCount"> · {{ file.pageCount }} páginas</template></span>
+                    <form v-if="renamingFileId === file.id" class="digital-file-rename" @submit.prevent="saveRename(file)">
+                      <input v-model="renameDraft" maxlength="80" placeholder="Nombre visible" autofocus @keyup.esc="cancelRename" />
+                      <button type="submit" aria-label="Guardar nombre"><Check /></button>
+                      <button type="button" aria-label="Cancelar" @click="cancelRename"><X /></button>
+                    </form>
+                    <template v-else>
+                      <strong>{{ file.label || file.originalName }}</strong>
+                      <span>{{ digitalMediaLabel(file.mediaType) }} · {{ formatFileSize(file.sizeBytes) }}<template v-if="file.pageCount"> · {{ file.pageCount }} páginas</template></span>
+                    </template>
                   </div>
                   <div class="digital-file-actions">
                     <button type="button" class="variant-action" @click="openReader(file)"><BookOpenText /> Leer</button>
@@ -1153,6 +1183,7 @@ function closeModal() {
                       <AppWindow v-if="getReaderPopoutPreference()" />
                       <ExternalLink v-else />
                     </button>
+                    <button type="button" class="variant-action variant-action--icon" title="Cambiar nombre" @click="startRename(file)"><Pencil /></button>
                     <button v-if="file.mediaType === 'IMAGE_FOLDER'" type="button" class="variant-action" @click="managingPagesFile = file"><Images /> Páginas</button>
                     <button type="button" class="variant-action variant-action--danger" @click="removeDigitalFile(file)"><Trash2 /> Eliminar</button>
                   </div>
@@ -1325,6 +1356,11 @@ function closeModal() {
 .digital-file-info{display:flex;flex-direction:column;gap:3px;min-width:0}
 .digital-file-info strong{overflow:hidden;color:var(--text);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
 .digital-file-info span{color:var(--text-faint);font-size:9.5px}
+.digital-file-rename{display:flex;align-items:center;gap:6px}
+.digital-file-rename input{flex:1;min-width:0;height:28px;padding:0 9px;color:var(--text);background:#05070d;border:1px solid rgba(159,107,255,.4);border-radius:6px;outline:none;font:11px inherit}
+.digital-file-rename button{width:26px;height:26px;flex-shrink:0;display:grid;place-items:center;color:var(--text-dim);background:#05070d;border:1px solid rgba(255,255,255,.075);border-radius:6px;cursor:pointer}
+.digital-file-rename button:hover{color:var(--accent);border-color:rgba(159,107,255,.3)}
+.digital-file-rename svg{width:13px;height:13px}
 .digital-file-actions{display:flex;gap:6px;flex-shrink:0}
 .variant-action--icon{flex:0 0 auto;padding:0 8px}
 .work-modal__footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 26px;background:rgba(7,10,17,.97);border-top:1px solid rgba(255,255,255,.06)}

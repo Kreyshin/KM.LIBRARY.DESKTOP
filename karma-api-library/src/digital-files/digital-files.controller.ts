@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -10,6 +10,8 @@ import { CurrentReader } from '../auth/current-reader.decorator';
 import { DigitalFilesService } from './digital-files.service';
 import { UpdateDigitalProgressDto } from './dto/update-digital-progress.dto';
 import { ReorderPagesDto } from './dto/reorder-pages.dto';
+import { RemovePagesDto } from './dto/remove-pages.dto';
+import { UpdateDigitalFileDto } from './dto/update-digital-file.dto';
 
 function digitalUploadStorage() {
   return diskStorage({
@@ -46,6 +48,26 @@ export class DigitalFilesController {
   @Delete(':fileId')
   remove(@Param('obraId') obraId: string, @Param('number', ParseIntPipe) number: number, @Param('fileId') fileId: string) {
     return this.digitalFiles.remove(obraId, number, fileId);
+  }
+
+  @Patch(':fileId')
+  updateFile(
+    @Param('obraId') obraId: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('fileId') fileId: string,
+    @Body() dto: UpdateDigitalFileDto,
+  ) {
+    return this.digitalFiles.updateLabel(obraId, number, fileId, dto.label ?? null);
+  }
+
+  @Delete(':fileId/pages')
+  removePages(
+    @Param('obraId') obraId: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('fileId') fileId: string,
+    @Body() dto: RemovePagesDto,
+  ) {
+    return this.digitalFiles.removePages(obraId, number, fileId, dto.pages);
   }
 
   @Post(':fileId/pages')

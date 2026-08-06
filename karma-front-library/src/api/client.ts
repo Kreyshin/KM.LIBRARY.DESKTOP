@@ -367,6 +367,10 @@ export const api = {
   },
   reorderDigitalPages: (obraId: string, number: number, fileId: string, order: string[]) =>
     request<DigitalFile>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/pages/order`, { method: 'PUT', body: JSON.stringify({ order }) }),
+  removeDigitalPages: (obraId: string, number: number, fileId: string, pages: string[]) =>
+    request<DigitalFile>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/pages`, { method: 'DELETE', body: JSON.stringify({ pages }) }),
+  updateDigitalFile: (obraId: string, number: number, fileId: string, label: string) =>
+    request<DigitalFile>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}`, { method: 'PATCH', body: JSON.stringify({ label }) }),
   getDigitalProgress: (obraId: string, number: number, fileId: string) =>
     request<DigitalProgress>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/progress`),
   saveDigitalProgress: (obraId: string, number: number, fileId: string, data: Partial<DigitalProgress>) =>
