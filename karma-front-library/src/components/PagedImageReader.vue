@@ -42,8 +42,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
 
 <style scoped>
 .paged-reader { display: flex; flex-direction: column; height: 100%; }
-.paged-reader__stage { position: relative; flex: 1; display: grid; place-items: center; overflow: hidden; background: #000; }
-.paged-reader__stage img { max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; }
+.paged-reader__stage { position: relative; flex: 1; overflow: hidden; background: #000; }
+.paged-reader__stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; margin: auto; user-select: none; }
 .paged-reader__zone { position: absolute; top: 0; bottom: 0; width: 35%; border: 0; background: none; cursor: pointer; }
 .paged-reader__zone--prev { left: 0; }
 .paged-reader__zone--next { right: 0; }

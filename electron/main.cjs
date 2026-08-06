@@ -153,7 +153,25 @@ async function createWindow() {
   let target = connection.mode === 'remote' ? normalizeRemoteUrl(connection.url) : '';
   if (!target) { target = `http://127.0.0.1:${port}`; await startServer(); }
   await waitForServer(target);
-  window.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith(target) && url.includes('/reader/')) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 900,
+          height: 1000,
+          minWidth: 480,
+          minHeight: 500,
+          backgroundColor: '#000000',
+          icon: paths.brandLogo,
+          autoHideMenuBar: true,
+          webPreferences: { contextIsolation: true, nodeIntegration: false },
+        },
+      };
+    }
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
   await window.loadURL(target);
 }
 

@@ -33,6 +33,7 @@ import {
 import { useObrasStore } from '../stores/obras';
 import DatePicker from './DatePicker.vue';
 import PurpleSelect from './PurpleSelect.vue';
+import ManagePagesModal from './ManagePagesModal.vue';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
 
 const props = defineProps<{ obra: Obra; volume: Volume }>();
@@ -52,6 +53,7 @@ const loadingDigitalFiles = ref(false);
 const uploadingDigital = ref(false);
 const digitalLabelDraft = ref('');
 const digitalFileInput = ref<HTMLInputElement | null>(null);
+const managingPagesFile = ref<DigitalFile | null>(null);
 
 const f = ref({
   title: '',
@@ -203,10 +205,17 @@ async function removeDigitalFile(file: DigitalFile) {
 }
 
 function openReader(file: DigitalFile) {
-  router.push({
+  const route = router.resolve({
     name: 'reader',
     params: { obraId: props.obra.id, volumeNumber: String(props.volume.number), fileId: file.id },
   });
+  window.open(route.href, '_blank', 'noopener');
+}
+
+function onPagesUpdated(updated: DigitalFile) {
+  const index = digitalFiles.value.findIndex((item) => item.id === updated.id);
+  if (index !== -1) digitalFiles.value[index] = updated;
+  managingPagesFile.value = updated;
 }
 
 function digitalMediaLabel(type: DigitalFile['mediaType']) {
@@ -1130,6 +1139,7 @@ function closeModal() {
                   </div>
                   <div class="digital-file-actions">
                     <button type="button" class="variant-action" @click="openReader(file)"><BookOpenText /> Leer</button>
+                    <button v-if="file.mediaType === 'IMAGE_FOLDER'" type="button" class="variant-action" @click="managingPagesFile = file"><Images /> Páginas</button>
                     <button type="button" class="variant-action variant-action--danger" @click="removeDigitalFile(file)"><Trash2 /> Eliminar</button>
                   </div>
                 </li>
@@ -1182,6 +1192,15 @@ function closeModal() {
       </footer>
     </section>
   </div>
+
+  <ManagePagesModal
+    v-if="managingPagesFile"
+    :obra-id="obra.id"
+    :volume-number="volume.number"
+    :file="managingPagesFile"
+    @close="managingPagesFile = null"
+    @updated="onPagesUpdated"
+  />
 </template>
 
 <style scoped>

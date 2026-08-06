@@ -124,6 +124,59 @@ export class DigitalFilesService {
     });
   }
 
+  async appendPages(obraId: string, number: number, fileId: string, files: Express.Multer.File[]) {
+    if (!files?.length) throw new BadRequestException('Selecciona al menos una imagen.');
+    const file = await this.getFile(obraId, number, fileId);
+    if (file.mediaType !== 'IMAGE_FOLDER') throw new BadRequestException('Solo se pueden agregar páginas a un archivo de imágenes.');
+
+    const invalid = files.find((item) => !IMAGE_EXTENSIONS.includes(extname(item.originalname).toLowerCase()));
+    if (invalid) {
+      files.forEach((item) => rmSync(item.path, { force: true }));
+      throw new BadRequestException(`"${invalid.originalname}" no es una imagen compatible.`);
+    }
+
+    const dir = join(getUploadsDir(), obraId, 'digital', file.id);
+    const manifest: string[] = JSON.parse(file.manifestJson || '[]');
+    let nextIndex = manifest.length;
+    let addedBytes = 0;
+
+    const sorted = [...files].sort((a, b) => a.originalname.localeCompare(b.originalname, undefined, { numeric: true }));
+    for (const item of sorted) {
+      nextIndex += 1;
+      const ext = extname(item.originalname).toLowerCase();
+      const pageName = `${String(nextIndex).padStart(4, '0')}${ext}`;
+      renameSync(item.path, join(dir, pageName));
+      addedBytes += item.size;
+      manifest.push(`/uploads/${obraId}/digital/${file.id}/${pageName}`);
+    }
+
+    return this.prisma.digitalFile.update({
+      where: { id: file.id },
+      data: {
+        manifestJson: JSON.stringify(manifest),
+        pageCount: manifest.length,
+        sizeBytes: file.sizeBytes + addedBytes,
+        storedPath: manifest[0],
+      },
+    });
+  }
+
+  async reorderPages(obraId: string, number: number, fileId: string, order: string[]) {
+    const file = await this.getFile(obraId, number, fileId);
+    if (file.mediaType !== 'IMAGE_FOLDER') throw new BadRequestException('Solo se puede reordenar un archivo de imágenes.');
+
+    const current = new Set<string>(JSON.parse(file.manifestJson || '[]'));
+    const next = new Set(order);
+    if (current.size !== next.size || [...current].some((url) => !next.has(url))) {
+      throw new BadRequestException('El nuevo orden no coincide con las páginas actuales.');
+    }
+
+    return this.prisma.digitalFile.update({
+      where: { id: file.id },
+      data: { manifestJson: JSON.stringify(order), storedPath: order[0] },
+    });
+  }
+
   async remove(obraId: string, number: number, fileId: string) {
     const file = await this.getFile(obraId, number, fileId);
     const dir = join(getUploadsDir(), obraId, 'digital', file.id);

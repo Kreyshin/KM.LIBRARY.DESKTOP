@@ -9,6 +9,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { CurrentReader } from '../auth/current-reader.decorator';
 import { DigitalFilesService } from './digital-files.service';
 import { UpdateDigitalProgressDto } from './dto/update-digital-progress.dto';
+import { ReorderPagesDto } from './dto/reorder-pages.dto';
 
 function digitalUploadStorage() {
   return diskStorage({
@@ -45,6 +46,27 @@ export class DigitalFilesController {
   @Delete(':fileId')
   remove(@Param('obraId') obraId: string, @Param('number', ParseIntPipe) number: number, @Param('fileId') fileId: string) {
     return this.digitalFiles.remove(obraId, number, fileId);
+  }
+
+  @Post(':fileId/pages')
+  @UseInterceptors(FilesInterceptor('files', 500, { storage: digitalUploadStorage(), limits: { fileSize: 2 * 1024 * 1024 * 1024 } }))
+  appendPages(
+    @Param('obraId') obraId: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('fileId') fileId: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.digitalFiles.appendPages(obraId, number, fileId, files);
+  }
+
+  @Put(':fileId/pages/order')
+  reorderPages(
+    @Param('obraId') obraId: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('fileId') fileId: string,
+    @Body() dto: ReorderPagesDto,
+  ) {
+    return this.digitalFiles.reorderPages(obraId, number, fileId, dto.order);
   }
 
   @Get(':fileId/progress')

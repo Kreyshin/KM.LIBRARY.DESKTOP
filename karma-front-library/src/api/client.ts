@@ -360,6 +360,13 @@ export const api = {
   },
   removeDigitalFile: (obraId: string, number: number, fileId: string) =>
     request<{ deleted: boolean }>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}`, { method: 'DELETE' }),
+  appendDigitalPages: (obraId: string, number: number, fileId: string, files: File[]) => {
+    const form = new FormData();
+    files.forEach((file) => form.append('files', file));
+    return request<DigitalFile>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/pages`, { method: 'POST', body: form });
+  },
+  reorderDigitalPages: (obraId: string, number: number, fileId: string, order: string[]) =>
+    request<DigitalFile>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/pages/order`, { method: 'PUT', body: JSON.stringify({ order }) }),
   getDigitalProgress: (obraId: string, number: number, fileId: string) =>
     request<DigitalProgress>(`/obras/${obraId}/volumes/${number}/digital-files/${fileId}/progress`),
   saveDigitalProgress: (obraId: string, number: number, fileId: string, data: Partial<DigitalProgress>) =>

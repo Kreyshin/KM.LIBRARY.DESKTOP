@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { ArrowLeft } from 'lucide-vue-next';
 import ePub from 'epubjs';
 import type Book from 'epubjs/types/book';
@@ -11,7 +11,6 @@ import { notifyError } from '../services/notifications';
 import PagedImageReader from '../components/PagedImageReader.vue';
 
 const route = useRoute();
-const router = useRouter();
 
 const obraId = route.params.obraId as string;
 const volumeNumber = Number(route.params.volumeNumber);
@@ -139,7 +138,7 @@ onBeforeUnmount(() => {
 });
 
 function goBack() {
-  router.back();
+  window.close();
 }
 </script>
 
