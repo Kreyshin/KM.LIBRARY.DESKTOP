@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { ArrowDown, ArrowUp, FileUp, Save, X } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, FileUp, GripVertical, Save, X } from 'lucide-vue-next';
 import { api, type DigitalFile } from '../api/client';
 import { notifyError, notifySuccess } from '../services/notifications';
 
@@ -12,6 +12,7 @@ const dirty = ref(false);
 const saving = ref(false);
 const appending = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const dragIndex = ref<number | null>(null);
 
 function loadPages() {
   try { pages.value = JSON.parse(props.file.manifestJson || '[]'); } catch { pages.value = []; }
@@ -34,6 +35,31 @@ function moveDown(index: number) {
   if (index >= pages.value.length - 1) return;
   [pages.value[index], pages.value[index + 1]] = [pages.value[index + 1], pages.value[index]];
   dirty.value = true;
+}
+
+function onDragStart(index: number, event: DragEvent) {
+  dragIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+  }
+}
+
+function onDragOver(event: DragEvent) {
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+}
+
+function onDrop(index: number) {
+  if (dragIndex.value === null || dragIndex.value === index) return;
+  const [moved] = pages.value.splice(dragIndex.value, 1);
+  pages.value.splice(index, 0, moved);
+  dirty.value = true;
+  dragIndex.value = null;
+}
+
+function onDragEnd() {
+  dragIndex.value = null;
 }
 
 async function saveOrder() {
@@ -82,14 +108,14 @@ async function onFilesChosen(event: Event) {
         <div>
           <span class="pages-modal__eyebrow">PÁGINAS</span>
           <h2>{{ file.label || file.originalName }}</h2>
-          <p>Agrega más imágenes al final o cambia el orden de lectura.</p>
+          <p>Agrega más imágenes al final, arrastra para reordenar o usa las flechas.</p>
         </div>
         <button type="button" class="pages-modal__close" aria-label="Cerrar" @click="$emit('close')"><X /></button>
       </header>
 
       <div class="pages-modal__body">
         <div class="pages-modal__actions">
-          <button type="button" class="new-edition-button" :disabled="appending" @click="pickFiles">
+          <button type="button" class="pages-upload-button" :disabled="appending" @click="pickFiles">
             <FileUp /> {{ appending ? 'Agregando…' : 'Agregar más imágenes' }}
           </button>
           <button type="button" class="pages-save-button" :disabled="!dirty || saving" @click="saveOrder">
@@ -99,7 +125,18 @@ async function onFilesChosen(event: Event) {
         <input ref="fileInput" type="file" hidden multiple accept="image/*" @change="onFilesChosen" />
 
         <ol class="pages-list">
-          <li v-for="(page, index) in pages" :key="page" class="pages-row">
+          <li
+            v-for="(page, index) in pages"
+            :key="page"
+            class="pages-row"
+            :class="{ dragging: dragIndex === index }"
+            draggable="true"
+            @dragstart="onDragStart(index, $event)"
+            @dragover="onDragOver"
+            @drop="onDrop(index)"
+            @dragend="onDragEnd"
+          >
+            <span class="pages-row__grip" aria-hidden="true"><GripVertical /></span>
             <span class="pages-row__number">{{ index + 1 }}</span>
             <img :src="page" :alt="`Página ${index + 1}`" />
             <span class="pages-row__name">{{ pageName(page) }}</span>
@@ -124,13 +161,20 @@ async function onFilesChosen(event: Event) {
 .pages-modal__close { width: 32px; height: 32px; display: grid; place-items: center; color: var(--text-dim); background: #0d111a; border: 1px solid rgba(255, 255, 255, .075); border-radius: 8px; cursor: pointer; }
 .pages-modal__body { flex: 1; overflow-y: auto; padding: 18px 22px 22px; }
 .pages-modal__actions { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-.new-edition-button:disabled, .pages-save-button:disabled { opacity: .5; cursor: not-allowed; }
+.pages-upload-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid rgba(159, 107, 255, .38); border-radius: 8px; background: rgba(159, 107, 255, .11); color: #d9c7ff; font: 700 11px inherit; cursor: pointer; }
+.pages-upload-button:hover:not(:disabled) { background: rgba(159, 107, 255, .18); border-color: var(--accent); }
+.pages-upload-button svg { width: 14px; height: 14px; }
+.pages-upload-button:disabled, .pages-save-button:disabled { opacity: .5; cursor: not-allowed; }
 .pages-save-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; color: #fff; background: var(--accent-gradient); border: 0; border-radius: 8px; font: 700 11px inherit; cursor: pointer; }
+.pages-save-button svg { width: 14px; height: 14px; }
 .pages-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.pages-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #0d111a; border: 1px solid rgba(255, 255, 255, .06); border-radius: 8px; }
+.pages-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #0d111a; border: 1px solid rgba(255, 255, 255, .06); border-radius: 8px; cursor: grab; }
+.pages-row.dragging { opacity: .4; border-style: dashed; }
+.pages-row__grip { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0; }
+.pages-row__grip svg { width: 14px; height: 14px; }
 .pages-row__number { min-width: 22px; color: var(--text-faint); font-size: 11px; font-weight: 700; text-align: center; }
-.pages-row img { width: 40px; height: 56px; object-fit: cover; border-radius: 4px; background: #05070d; flex-shrink: 0; }
-.pages-row__name { flex: 1; overflow: hidden; color: var(--text-dim); font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
+.pages-row img { width: 40px; height: 56px; object-fit: cover; border-radius: 4px; background: #05070d; flex-shrink: 0; pointer-events: none; }
+.pages-row__name { flex: 1; overflow: hidden; color: var(--text-dim); font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 .pages-row__actions { display: flex; gap: 4px; flex-shrink: 0; }
 .pages-row__actions button { width: 26px; height: 26px; display: grid; place-items: center; color: var(--text-dim); background: #05070d; border: 1px solid rgba(255, 255, 255, .075); border-radius: 6px; cursor: pointer; }
 .pages-row__actions button:hover:not(:disabled) { color: var(--accent); border-color: rgba(159, 107, 255, .3); }

@@ -2,11 +2,13 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import {
+  AppWindow,
   BookMarked,
   BookOpen,
   BookOpenText,
   Check,
   Crown,
+  ExternalLink,
   FileUp,
   ImagePlus,
   Images,
@@ -35,6 +37,7 @@ import DatePicker from './DatePicker.vue';
 import PurpleSelect from './PurpleSelect.vue';
 import ManagePagesModal from './ManagePagesModal.vue';
 import { confirmAction, notifyError, notifySuccess } from '../services/notifications';
+import { getReaderPopoutPreference } from '../services/preferences';
 
 const props = defineProps<{ obra: Obra; volume: Volume }>();
 const emit = defineEmits<{
@@ -204,12 +207,14 @@ async function removeDigitalFile(file: DigitalFile) {
   }
 }
 
-function openReader(file: DigitalFile) {
+function openReader(file: DigitalFile, overrideOnce = false) {
   const route = router.resolve({
     name: 'reader',
     params: { obraId: props.obra.id, volumeNumber: String(props.volume.number), fileId: file.id },
   });
-  window.open(route.href, '_blank', 'noopener');
+  const popout = overrideOnce ? !getReaderPopoutPreference() : getReaderPopoutPreference();
+  if (popout) window.open(route.href, '_blank', 'noopener');
+  else router.push(route);
 }
 
 function onPagesUpdated(updated: DigitalFile) {
@@ -1139,6 +1144,15 @@ function closeModal() {
                   </div>
                   <div class="digital-file-actions">
                     <button type="button" class="variant-action" @click="openReader(file)"><BookOpenText /> Leer</button>
+                    <button
+                      type="button"
+                      class="variant-action variant-action--icon"
+                      :title="getReaderPopoutPreference() ? 'Abrir aquí solo esta vez' : 'Abrir en ventana aparte solo esta vez'"
+                      @click="openReader(file, true)"
+                    >
+                      <AppWindow v-if="getReaderPopoutPreference()" />
+                      <ExternalLink v-else />
+                    </button>
                     <button v-if="file.mediaType === 'IMAGE_FOLDER'" type="button" class="variant-action" @click="managingPagesFile = file"><Images /> Páginas</button>
                     <button type="button" class="variant-action variant-action--danger" @click="removeDigitalFile(file)"><Trash2 /> Eliminar</button>
                   </div>
@@ -1312,6 +1326,7 @@ function closeModal() {
 .digital-file-info strong{overflow:hidden;color:var(--text);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
 .digital-file-info span{color:var(--text-faint);font-size:9.5px}
 .digital-file-actions{display:flex;gap:6px;flex-shrink:0}
+.variant-action--icon{flex:0 0 auto;padding:0 8px}
 .work-modal__footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 26px;background:rgba(7,10,17,.97);border-top:1px solid rgba(255,255,255,.06)}
 .work-modal__actions{display:flex;align-items:center;gap:9px}
 .primary-button,.secondary-button,.danger-button,.link-button{min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 15px;border-radius:8px;font:700 12px inherit;cursor:pointer}

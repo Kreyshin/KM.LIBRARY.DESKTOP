@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { ArrowRight, DatabaseBackup, FolderOpen, HardDrive, Network, RotateCcw } from 'lucide-vue-next';
+import { ArrowRight, BookOpenText, DatabaseBackup, FolderOpen, HardDrive, Network, RotateCcw } from 'lucide-vue-next';
 import { notifyError } from '../services/notifications';
+import { getReaderPopoutPreference, setReaderPopoutPreference } from '../services/preferences';
 
 const busy = ref(false);
 const remoteUrl = ref('');
 const connectionMode = ref<'local' | 'remote'>('local');
 const isDesktop = Boolean(window.karmaDesktop);
 const storageInfo = ref<{ dataDir: string; defaultDataDir: string; isCustom: boolean; files: number; bytes: number }>();
+const readerPopout = ref(getReaderPopoutPreference());
+
+function onReaderPopoutChange() {
+  setReaderPopoutPreference(readerPopout.value);
+}
 
 onMounted(async () => {
   if (!window.karmaDesktop) return;
@@ -63,6 +69,14 @@ async function useLocal() {
         <RouterLink class="settings-link-button" to="/backups"><span>Gestionar respaldos</span><ArrowRight /></RouterLink>
       </article>
       <article class="card settings-card">
+        <div class="settings-card-title"><BookOpenText /><div><h2>Lector</h2><p>Decide cómo se abren tus EPUB, PDF, CBZ e imágenes.</p></div></div>
+        <label class="settings-toggle">
+          <input v-model="readerPopout" type="checkbox" @change="onReaderPopoutChange" />
+          <span>Abrir el lector en una ventana aparte</span>
+        </label>
+        <p class="settings-note">Con esto activado puedes seguir usando el resto de la app (incluido el Pomodoro) mientras lees. Cada archivo tiene además un botón para abrirlo distinto solo esa vez.</p>
+      </article>
+      <article class="card settings-card">
         <div class="settings-card-title"><HardDrive /><div><h2>Modo local</h2><p>SQLite e imágenes se guardan únicamente en esta computadora.</p></div></div>
         <span class="mode-pill" :class="{ active: connectionMode === 'local' }">{{ connectionMode === 'local' ? 'Activo' : 'Disponible' }}</span>
         <button v-if="isDesktop && connectionMode !== 'local'" @click="useLocal"><RotateCcw />Volver al modo local</button>
@@ -87,5 +101,5 @@ async function useLocal() {
 </template>
 
 <style scoped>
-.settings-page{display:grid;gap:24px}.settings-page header h1{font-size:2.2rem;margin:.35rem 0}.settings-page header p,.settings-card p{color:var(--text-muted,#9ca3af)}.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.settings-card{padding:24px;display:grid;gap:20px;align-content:start}.settings-wide{grid-column:1/-1}.settings-card-title{display:flex;gap:14px}.settings-card-title>svg{color:#a78bfa;width:28px}.settings-card h2{margin:0 0 4px}.settings-card p{margin:0}.settings-actions{display:flex;gap:12px}.settings-card button{display:inline-flex;align-items:center;gap:8px;width:max-content;border:1px solid #3b4255;background:#232839;color:#fff;border-radius:10px;padding:11px 15px;cursor:pointer}.settings-card button:hover{border-color:#8b5cf6}.settings-card button:disabled{opacity:.5}.settings-link-button{display:inline-flex;align-items:center;gap:8px;width:max-content;border:1px solid #3b4255;background:#232839;color:#fff;border-radius:10px;padding:11px 15px;text-decoration:none}.settings-link-button:hover{border-color:#8b5cf6}.settings-card label{display:grid;gap:8px}.settings-card input{background:#0c0f17;border:1px solid #353b4d;border-radius:10px;color:#fff;padding:13px}.mode-pill{width:max-content;border-radius:999px;background:#252a38;color:#aab1c2;padding:6px 11px}.mode-pill.active{background:#12392d;color:#6ee7b7}.settings-note{padding:14px;background:#111520;border-radius:10px}.settings-note strong{color:#e5e7eb}.storage-location{display:grid;gap:7px;padding:15px;border:1px solid #343a4b;background:#0c0f17;border-radius:11px}.storage-location span,.storage-location small{color:#9ca3af}.storage-location code{overflow-wrap:anywhere;color:#ddd6fe;font-family:"Cascadia Code",Consolas,monospace}@media(max-width:800px){.settings-grid{grid-template-columns:1fr}.settings-wide{grid-column:auto}.settings-actions{flex-direction:column}}
+.settings-page{display:grid;gap:24px}.settings-page header h1{font-size:2.2rem;margin:.35rem 0}.settings-page header p,.settings-card p{color:var(--text-muted,#9ca3af)}.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.settings-card{padding:24px;display:grid;gap:20px;align-content:start}.settings-wide{grid-column:1/-1}.settings-card-title{display:flex;gap:14px}.settings-card-title>svg{color:#a78bfa;width:28px}.settings-card h2{margin:0 0 4px}.settings-card p{margin:0}.settings-actions{display:flex;gap:12px}.settings-card button{display:inline-flex;align-items:center;gap:8px;width:max-content;border:1px solid #3b4255;background:#232839;color:#fff;border-radius:10px;padding:11px 15px;cursor:pointer}.settings-card button:hover{border-color:#8b5cf6}.settings-card button:disabled{opacity:.5}.settings-link-button{display:inline-flex;align-items:center;gap:8px;width:max-content;border:1px solid #3b4255;background:#232839;color:#fff;border-radius:10px;padding:11px 15px;text-decoration:none}.settings-link-button:hover{border-color:#8b5cf6}.settings-card label{display:grid;gap:8px}.settings-card input{background:#0c0f17;border:1px solid #353b4d;border-radius:10px;color:#fff;padding:13px}.settings-toggle{display:flex;align-items:center;gap:9px;color:#e5e7eb;font-size:13px;cursor:pointer}.settings-toggle input{width:16px;height:16px;accent-color:#8b5cf6}.mode-pill{width:max-content;border-radius:999px;background:#252a38;color:#aab1c2;padding:6px 11px}.mode-pill.active{background:#12392d;color:#6ee7b7}.settings-note{padding:14px;background:#111520;border-radius:10px}.settings-note strong{color:#e5e7eb}.storage-location{display:grid;gap:7px;padding:15px;border:1px solid #343a4b;background:#0c0f17;border-radius:11px}.storage-location span,.storage-location small{color:#9ca3af}.storage-location code{overflow-wrap:anywhere;color:#ddd6fe;font-family:"Cascadia Code",Consolas,monospace}@media(max-width:800px){.settings-grid{grid-template-columns:1fr}.settings-wide{grid-column:auto}.settings-actions{flex-direction:column}}
 </style>
