@@ -99,6 +99,9 @@ function onDocumentPointer(event: PointerEvent) {
 }
 
 function onKeydown(event: KeyboardEvent) {
+  const target = event.target as Node | null;
+  const withinThisSelect = Boolean(target && (root.value?.contains(target) || popover.value?.contains(target)));
+  if (!withinThisSelect) return;
   if (event.key === 'Escape') { open.value = false; return; }
   if (!open.value && ['ArrowDown', 'Enter', ' '].includes(event.key)) { event.preventDefault(); void toggle(); return; }
   if (!open.value || !['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
