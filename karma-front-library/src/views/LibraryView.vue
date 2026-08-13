@@ -3,7 +3,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Heart, LibraryBig, Plus, RotateCcw, Search, SearchX, SlidersHorizontal, Sparkles } from 'lucide-vue-next';
 import { useObrasStore } from '../stores/obras';
-import { type FormatType, type Obra, type ReadingStatus } from '../api/client';
+import { type FormatType, type ReadingStatus } from '../api/client';
 import { createCollectionFilters, hasActiveCollectionFilters, matchesCollectionFilters } from '../composables/collectionFilters';
 import CollectionFilters from '../components/CollectionFilters.vue';
 import WorkCard from '../components/WorkCard.vue';
@@ -12,7 +12,7 @@ import PurpleSelect from '../components/PurpleSelect.vue';
 const route = useRoute();
 const router = useRouter();
 const store = useObrasStore();
-const openWorkModal = inject<(obra: Obra | null) => void>('openWorkModal');
+const openWorkModal = inject<() => void>('openWorkModal');
 const filters = ref(createCollectionFilters({
   query: String(route.query.q || ''),
   format: (route.query.tipo as FormatType) || 'ALL',
@@ -107,7 +107,7 @@ function clearFilters() {
         </div>
 
         <div v-else-if="paged.length" class="works-grid">
-          <WorkCard v-for="obra in paged" :key="obra.id" :obra="obra" @click="openWorkModal?.(obra)" @updated="store.upsert($event)" />
+          <WorkCard v-for="obra in paged" :key="obra.id" :obra="obra" @click="router.push({ name: 'obra', params: { id: obra.id } })" @updated="store.upsert($event)" />
         </div>
 
         <section v-else class="empty-state">
@@ -115,7 +115,7 @@ function clearFilters() {
           <h2>{{ store.obras.value.length ? 'No hay coincidencias' : 'Tu próxima historia empieza aquí' }}</h2>
           <p>{{ store.obras.value.length ? 'Ajusta los filtros para volver a explorar tu colección.' : 'Agrega tu primera obra y comienza a construir una biblioteca hecha a tu medida.' }}</p>
           <button v-if="store.obras.value.length" type="button" class="empty-state__button empty-state__button--secondary" @click="clearFilters"><RotateCcw /> Limpiar filtros</button>
-          <button v-else type="button" class="empty-state__button empty-state__button--primary" @click="openWorkModal?.(null)"><Plus /> Agregar primera obra</button>
+          <button v-else type="button" class="empty-state__button empty-state__button--primary" @click="openWorkModal?.()"><Plus /> Agregar primera obra</button>
         </section>
 
         <nav v-if="totalPages > 1" class="pagination" aria-label="Páginas de resultados">

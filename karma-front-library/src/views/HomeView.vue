@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   BookOpen, BookOpenText, Layers, PlayCircle, CheckCircle2, Bookmark, Heart,
   PanelsTopLeft, Smartphone, ScrollText, MessageSquareText, BookMarked, Plus, ShoppingBag,
@@ -29,8 +30,8 @@ const FORMAT_ICONS = {
   COMIC: MessageSquareText,
 };
 
+const router = useRouter();
 const store = useObrasStore();
-const openWorkModal = inject<(o: any) => void>('openWorkModal');
 const quickUpdating = ref<string | null>(null);
 
 const total = computed(() => store.obras.value.length);
@@ -154,7 +155,7 @@ async function advanceChapter(obra: Obra) {
         </div>
         <div v-if="continueReading.length === 0" class="widget-empty"><BookMarked /><strong>Nada en progreso todavía</strong><span>Marca una obra como “Leyendo” para verla aquí.</span></div>
         <div v-for="o in continueReading" :key="o.id" class="list-row" style="cursor:pointer"
-          @click="openWorkModal?.(o)">
+          @click="router.push({ name: 'obra', params: { id: o.id } })">
           <img v-if="o.coverPath" class="list-thumb" :src="o.thumbnailPath || o.coverPath" :alt="`Portada de ${o.titulo}`" loading="lazy" decoding="async" />
           <div v-else class="list-thumb-fallback">{{ o.titulo.slice(0, 2) }}</div>
           <div class="list-meta">
@@ -174,7 +175,7 @@ async function advanceChapter(obra: Obra) {
           <RouterLink to="/library">Ver todo</RouterLink>
         </div>
         <div v-if="recentlyAdded.length === 0" class="widget-empty"><BookOpen /><strong>Tu biblioteca está esperando</strong><span>Agrega una obra para comenzar.</span></div>
-        <div v-for="o in recentlyAdded" :key="o.id" class="list-row" style="cursor:pointer" @click="openWorkModal?.(o)">
+        <div v-for="o in recentlyAdded" :key="o.id" class="list-row" style="cursor:pointer" @click="router.push({ name: 'obra', params: { id: o.id } })">
           <img v-if="o.coverPath" class="list-thumb" :src="o.thumbnailPath || o.coverPath" :alt="`Portada de ${o.titulo}`" loading="lazy" decoding="async" />
           <div v-else class="list-thumb-fallback">{{ o.titulo.slice(0, 2) }}</div>
           <div class="list-meta">

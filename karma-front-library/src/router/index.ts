@@ -5,6 +5,7 @@ const routes = [
   { path: '/profiles', name: 'profiles', component: () => import('../views/ProfileSelectorView.vue'), meta: { title: 'Elegir perfil', standalone: true } },
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue'), meta: { title: 'Inicio' } },
   { path: '/library', name: 'library', component: () => import('../views/LibraryView.vue'), meta: { title: 'Librero' } },
+  { path: '/obras/:id', name: 'obra', component: () => import('../views/ObraView.vue'), meta: { title: 'Obra' } },
   { path: '/shelves', name: 'shelves', component: () => import('../views/ShelvesView.vue'), meta: { title: 'Estantería' } },
   { path: '/discover', redirect: '/library' },
   { path: '/reading-log', name: 'reading-log', component: () => import('../views/ReadingLogView.vue'), meta: { title: 'Registro de lectura' } },

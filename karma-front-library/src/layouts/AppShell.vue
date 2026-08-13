@@ -1,34 +1,28 @@
 <script setup lang="ts">
 import { provide, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import Sidebar from '../components/Sidebar.vue';
 import Topbar from '../components/Topbar.vue';
 import AddWorkModal from '../components/AddWorkModal.vue';
 import VolumeModal from '../components/VolumeModal.vue';
 import { useObrasStore } from '../stores/obras';
 
+const router = useRouter();
 const store = useObrasStore();
 store.load();
 
 const modalOpen = ref(false);
-const editingObra = ref<null | any>(null); // null = modo creación
 
 function openQuickAdd() {
-  editingObra.value = null;
-  modalOpen.value = true;
-}
-
-function openEdit(obra: any) {
-  editingObra.value = obra;
   modalOpen.value = true;
 }
 
 function closeModal() {
   modalOpen.value = false;
-  editingObra.value = null;
 }
 
-// Expone openEdit a las vistas hijas vía provide/inject
-provide('openWorkModal', openEdit);
+// Expone la creación de obras a las vistas hijas vía provide/inject (ver obra existente = /obras/:id)
+provide('openWorkModal', openQuickAdd);
 
 const volumeModalOpen = ref(false);
 const editingVolumeObra = ref<null | any>(null);
@@ -50,13 +44,12 @@ function onVolumeUpdated(obra: any) {
   store.upsert(obra);
   editingVolumeObra.value = obra;
   editingVolume.value = obra.volumes.find((volume: any) => volume.number === editingVolume.value?.number) || null;
-  if (editingObra.value?.id === obra.id) editingObra.value = obra;
 }
 
 function openObraFromVolume() {
   const obra = editingVolumeObra.value;
   closeVolumeModal();
-  if (obra) openEdit(obra);
+  if (obra) router.push({ name: 'obra', params: { id: obra.id } });
 }
 
 provide('openVolumeModal', openVolumeModal);
@@ -74,10 +67,8 @@ provide('openVolumeModal', openVolumeModal);
 
     <AddWorkModal
       v-if="modalOpen"
-      :obra="editingObra"
       @close="closeModal"
       @created="closeModal"
-      @deleted="closeModal"
     />
 
     <VolumeModal

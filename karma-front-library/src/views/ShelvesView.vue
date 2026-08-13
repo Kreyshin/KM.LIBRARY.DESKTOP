@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   BookOpen,
   ChevronLeft,
@@ -37,8 +38,8 @@ interface WorkShelf {
   readCount: number;
 }
 
+const router = useRouter();
 const store = useObrasStore();
-const openWorkModal = inject<(obra: Obra) => void>('openWorkModal');
 const openVolumeModal = inject<(obra: Obra, volume: Volume) => void>('openVolumeModal');
 
 const viewMode = ref<ViewMode>('covers');
@@ -373,7 +374,7 @@ function clearCollectionFilters() { filters.value = createCollectionFilters(); }
             <button
               type="button"
               class="work-shelf__identity"
-              @click="openWorkModal?.(shelf.obra)"
+              @click="router.push({ name: 'obra', params: { id: shelf.obra.id } })"
             >
               <div class="work-shelf__cover">
                 <img
